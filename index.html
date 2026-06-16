@@ -3,164 +3,302 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ECバトラー CRM</title>
+<title>ECバトラー 管理ツール</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
-  .topbar { background: #5C8A52; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
-  .topbar h1 { font-size: 18px; font-weight: 600; }
-  .topbar span { font-size: 13px; opacity: 0.8; }
-  .tabs { background: white; border-bottom: 1px solid #e5e5e5; display: flex; padding: 0 24px; }
-  .tab { padding: 14px 20px; font-size: 14px; color: #666; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; border-top: none; border-left: none; border-right: none; }
-  .tab.active { color: #5C8A52; border-bottom-color: #5C8A52; font-weight: 600; }
-  .content { padding: 24px; max-width: 1100px; margin: 0 auto; }
-  .section { display: none; }
-  .section.active { display: block; }
-  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-  .stat-card { background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .stat-card .num { font-size: 36px; font-weight: 700; color: #5C8A52; }
-  .stat-card .lbl { font-size: 13px; color: #888; margin-top: 4px; }
-  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #333; }
-  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-weight: 500; }
-  .btn-primary { background: #5C8A52; color: white; }
-  .btn-primary:hover { background: #4a7040; }
-  .btn-secondary { background: #f0f0f0; color: #333; }
-  .btn-secondary:hover { background: #e0e0e0; }
-  .btn-danger { background: #fff0f0; color: #c00; border: 1px solid #fcc; }
-  .btn-danger:hover { background: #ffe0e0; }
-  .btn-sm { padding: 5px 10px; font-size: 12px; }
-  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  .search-input { padding: 8px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; width: 240px; outline: none; }
-  .search-input:focus { border-color: #5C8A52; }
-  .client-card { background: white; border-radius: 12px; padding: 18px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .client-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .client-name { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-  .badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
-  .badge-active { background: #e8f5e2; color: #3a7a2a; }
-  .badge-trial { background: #fff3e0; color: #e65100; }
-  .badge-pause { background: #f0f0f0; color: #666; }
-  .info-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 10px; }
-  .info-item label { font-size: 11px; color: #999; display: block; margin-bottom: 2px; }
-  .info-item a { font-size: 13px; color: #5C8A52; text-decoration: none; }
-  .info-item span { font-size: 13px; color: #333; }
-  .memo-text { font-size: 13px; color: #666; background: #f8f8f8; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; line-height: 1.6; }
-  .action-row { display: flex; gap: 8px; }
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
-  .modal-overlay.open { display: flex; }
-  .modal { background: white; border-radius: 16px; padding: 28px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
-  .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 20px; color: #222; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .form-group { display: flex; flex-direction: column; gap: 5px; }
-  .form-group.full { grid-column: 1 / -1; }
-  .form-group label { font-size: 12px; color: #777; font-weight: 500; }
-  .form-group input, .form-group select, .form-group textarea { padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; width: 100%; font-family: inherit; }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #5C8A52; }
-  .form-group textarea { min-height: 80px; resize: vertical; }
-  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-  .mtg-item { display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
-  .mtg-item:last-child { border-bottom: none; }
-  .mtg-date { text-align: center; min-width: 48px; }
-  .mtg-date .day { font-size: 26px; font-weight: 700; color: #5C8A52; line-height: 1; }
-  .mtg-date .mon { font-size: 12px; color: #999; }
-  .mtg-body { flex: 1; }
-  .mtg-body .client-nm { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
-  .mtg-body .topic { font-size: 13px; color: #666; }
-  .mtg-body .minutes { font-size: 12px; color: #888; margin-top: 4px; background: #f8f8f8; padding: 6px 10px; border-radius: 6px; }
-  .task-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-  .task-item:last-child { border-bottom: none; }
-  .task-check { width: 18px; height: 18px; cursor: pointer; accent-color: #5C8A52; }
-  .task-title { flex: 1; font-size: 14px; }
-  .task-title.done { text-decoration: line-through; color: #999; }
-  .task-due { font-size: 12px; color: #E8821A; font-weight: 500; }
-  .task-due.overdue { color: #c00; }
-  .imp-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-  .imp-item:last-child { border-bottom: none; }
-  .imp-date { font-size: 11px; color: #999; margin-bottom: 3px; }
-  .imp-text { font-size: 13px; color: #333; line-height: 1.6; }
-  .empty { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
-  .section-title { font-size: 13px; font-weight: 600; color: #5C8A52; margin-bottom: 12px; margin-top: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .tabs-inner { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #eee; }
-  .tab-inner { padding: 8px 14px; font-size: 13px; color: #888; cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-  .tab-inner.active { color: #5C8A52; border-bottom-color: #5C8A52; font-weight: 600; }
-  .detail-section { display: none; }
-  .detail-section.active { display: block; }
-  @media (max-width: 600px) {
-    .info-row { grid-template-columns: 1fr 1fr; }
-    .stat-grid { grid-template-columns: 1fr; }
-    .form-grid { grid-template-columns: 1fr; }
-    .form-group.full { grid-column: 1; }
-    .content { padding: 16px; }
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f4f6f4; color: #1a1a1a; min-height: 100vh; }
+
+/* ===== SIDEBAR ===== */
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: 220px; background: #2d4a28; color: white; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
+.sidebar-logo { padding: 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-logo h1 { font-size: 16px; font-weight: 700; color: white; }
+.sidebar-logo span { font-size: 11px; color: rgba(255,255,255,0.5); }
+.sidebar-nav { flex: 1; padding: 12px 0; }
+.nav-section { padding: 8px 18px 4px; font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 8px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 14px; color: rgba(255,255,255,0.75); cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+.nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+.nav-item.active { background: rgba(255,255,255,0.12); color: white; border-left-color: #8BC34A; font-weight: 600; }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { padding: 16px 18px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; color: rgba(255,255,255,0.4); }
+
+/* ===== MAIN ===== */
+.main { margin-left: 220px; flex: 1; }
+.topbar { background: white; border-bottom: 1px solid #e8ede8; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.topbar-title { font-size: 18px; font-weight: 700; color: #2d4a28; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.content { padding: 28px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ===== COMPONENTS ===== */
+.btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; }
+.btn-primary { background: #5C8A52; color: white; }
+.btn-primary:hover { background: #4a7040; }
+.btn-secondary { background: #f0f4f0; color: #444; border: 1px solid #dde8dd; }
+.btn-secondary:hover { background: #e4ece4; }
+.btn-danger { background: #fff0f0; color: #c00; border: 1px solid #fcc; }
+.btn-danger:hover { background: #ffe0e0; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-orange { background: #E8821A; color: white; }
+.btn-orange:hover { background: #c96e12; }
+
+.card { background: white; border-radius: 14px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 16px; }
+.card h3 { font-size: 15px; font-weight: 700; color: #2d4a28; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+.badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600; }
+.badge-active { background: #e8f5e2; color: #2d6a1f; }
+.badge-trial { background: #fff3e0; color: #bf5000; }
+.badge-pause { background: #f0f0f0; color: #666; }
+.badge-production { background: #e3f2fd; color: #1565c0; }
+
+.tag { font-size: 11px; padding: 2px 8px; border-radius: 6px; background: #f0f4f0; color: #5C8A52; font-weight: 500; }
+
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 18px; padding: 28px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: #222; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label { font-size: 12px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.form-group input, .form-group select, .form-group textarea { padding: 10px 13px; border: 1.5px solid #e0e8e0; border-radius: 9px; font-size: 14px; outline: none; width: 100%; font-family: inherit; transition: border-color 0.15s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #5C8A52; }
+.form-group textarea { min-height: 80px; resize: vertical; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #f0f0f0; }
+
+.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.toolbar-left { display: flex; align-items: center; gap: 10px; }
+.search-input { padding: 9px 14px; border: 1.5px solid #e0e8e0; border-radius: 9px; font-size: 14px; width: 240px; outline: none; }
+.search-input:focus { border-color: #5C8A52; }
+
+.empty { text-align: center; padding: 48px 24px; color: #aaa; font-size: 14px; }
+.empty .icon { font-size: 40px; display: block; margin-bottom: 12px; }
+
+/* ===== DASHBOARD ===== */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.stat-card .num { font-size: 32px; font-weight: 800; color: #2d4a28; }
+.stat-card .lbl { font-size: 12px; color: #888; margin-top: 4px; font-weight: 500; }
+.stat-card .sub { font-size: 11px; color: #E8821A; margin-top: 6px; font-weight: 600; }
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.mtg-item { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; border-bottom: 1px solid #f4f4f4; }
+.mtg-item:last-child { border-bottom: none; }
+.mtg-date { text-align: center; min-width: 44px; background: #f0f4f0; border-radius: 10px; padding: 6px; }
+.mtg-date .day { font-size: 20px; font-weight: 800; color: #2d4a28; line-height: 1; }
+.mtg-date .mon { font-size: 10px; color: #888; margin-top: 1px; }
+.mtg-body .cn { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.mtg-body .tp { font-size: 12px; color: #888; }
+
+.task-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f4f4f4; }
+.task-item:last-child { border-bottom: none; }
+.task-check { width: 17px; height: 17px; cursor: pointer; accent-color: #5C8A52; flex-shrink: 0; }
+.task-title { flex: 1; font-size: 13px; line-height: 1.4; }
+.task-title.done { text-decoration: line-through; color: #bbb; }
+.task-due { font-size: 11px; color: #E8821A; font-weight: 600; white-space: nowrap; }
+.task-due.overdue { color: #c00; }
+.task-client { font-size: 11px; color: #5C8A52; background: #f0f4f0; padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+
+/* ===== CLIENT LIST ===== */
+.client-card { background: white; border-radius: 14px; padding: 18px 22px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: box-shadow 0.15s; }
+.client-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.1); }
+.client-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.client-name { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.client-actions { display: flex; gap: 6px; }
+.info-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.info-item label { font-size: 10px; color: #aaa; display: block; margin-bottom: 2px; font-weight: 600; text-transform: uppercase; }
+.info-item a { font-size: 13px; color: #5C8A52; text-decoration: none; }
+.info-item a:hover { text-decoration: underline; }
+.info-item span { font-size: 13px; color: #444; }
+.memo-text { font-size: 13px; color: #666; background: #f8faf8; border-radius: 8px; padding: 8px 12px; margin-top: 10px; line-height: 1.6; border-left: 3px solid #dde8dd; }
+
+/* ===== DETAIL TABS ===== */
+.detail-tabs { display: flex; gap: 2px; margin-bottom: 16px; background: #f4f6f4; border-radius: 10px; padding: 3px; }
+.detail-tab { flex: 1; padding: 7px 12px; font-size: 13px; color: #888; cursor: pointer; border: none; background: none; border-radius: 8px; font-weight: 500; text-align: center; }
+.detail-tab.active { background: white; color: #2d4a28; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.detail-panel { display: none; }
+.detail-panel.active { display: block; }
+
+.imp-item { padding: 10px 0; border-bottom: 1px solid #f4f4f4; }
+.imp-item:last-child { border-bottom: none; }
+.imp-date { font-size: 11px; color: #aaa; margin-bottom: 3px; font-weight: 600; }
+.imp-text { font-size: 13px; color: #333; line-height: 1.6; }
+
+/* ===== PHASE PROGRESS ===== */
+.phase-bar { display: flex; gap: 0; margin-bottom: 20px; border-radius: 10px; overflow: hidden; border: 1px solid #dde8dd; }
+.phase-step { flex: 1; padding: 10px 6px; text-align: center; font-size: 11px; font-weight: 600; color: #aaa; background: #f8faf8; cursor: pointer; border-right: 1px solid #dde8dd; transition: all 0.15s; }
+.phase-step:last-child { border-right: none; }
+.phase-step.done { background: #e8f5e2; color: #2d6a1f; }
+.phase-step.current { background: #5C8A52; color: white; }
+.phase-step:hover { background: #e4ece4; color: #2d4a28; }
+.phase-step.current:hover { background: #4a7040; color: white; }
+
+/* ===== PRODUCTION ===== */
+.prod-card { background: white; border-radius: 14px; padding: 18px 22px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.prod-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.prod-name { font-size: 15px; font-weight: 700; }
+.prod-phase { font-size: 12px; color: white; background: #5C8A52; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+.checklist-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f4f4f4; }
+.checklist-item:last-child { border-bottom: none; }
+.checklist-check { width: 16px; height: 16px; cursor: pointer; accent-color: #5C8A52; flex-shrink: 0; }
+.checklist-label { font-size: 13px; color: #333; }
+.checklist-label.done { text-decoration: line-through; color: #bbb; }
+.progress-bar { height: 6px; background: #f0f0f0; border-radius: 3px; margin-bottom: 14px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #5C8A52, #8BC34A); border-radius: 3px; transition: width 0.3s; }
+
+/* ===== SCHEDULE ===== */
+.schedule-card { background: white; border-radius: 14px; padding: 18px 22px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; align-items: flex-start; gap: 16px; }
+.schedule-date { text-align: center; min-width: 52px; background: #2d4a28; border-radius: 10px; padding: 8px; color: white; }
+.schedule-date .day { font-size: 24px; font-weight: 800; line-height: 1; }
+.schedule-date .mon { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+.schedule-body { flex: 1; }
+.schedule-client { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.schedule-topic { font-size: 13px; color: #666; }
+.schedule-minutes { font-size: 12px; color: #888; margin-top: 6px; background: #f8faf8; padding: 6px 10px; border-radius: 8px; line-height: 1.5; }
+
+@media (max-width: 768px) {
+  .sidebar { width: 60px; }
+  .sidebar-logo h1, .sidebar-logo span, .nav-item span, .nav-section { display: none; }
+  .main { margin-left: 60px; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .dash-grid { grid-template-columns: 1fr; }
+  .info-row { grid-template-columns: 1fr 1fr; }
+}
 </style>
 </head>
 <body>
+<div class="layout">
 
-<div class="topbar">
-  <h1>⚔️ ECバトラー CRM</h1>
-  <span id="top-count">読み込み中...</span>
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>⚔️ ECバトラー</h1>
+    <span>管理ツール</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">メニュー</div>
+    <div class="nav-item active" onclick="showPage('home')">
+      <span class="icon">🏠</span><span>ホーム</span>
+    </div>
+    <div class="nav-section">管理</div>
+    <div class="nav-item" onclick="showPage('production')">
+      <span class="icon">🔨</span><span>制作管理</span>
+    </div>
+    <div class="nav-item" onclick="showPage('clients')">
+      <span class="icon">👥</span><span>顧客管理</span>
+    </div>
+    <div class="nav-item" onclick="showPage('schedule')">
+      <span class="icon">📅</span><span>MTGスケジュール</span>
+    </div>
+    <div class="nav-item" onclick="showPage('tasks')">
+      <span class="icon">✅</span><span>タスク</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">v2.0</div>
 </div>
 
-<div class="tabs">
-  <button class="tab active" onclick="switchTab('dashboard')">ダッシュボード</button>
-  <button class="tab" onclick="switchTab('clients')">顧客管理</button>
-  <button class="tab" onclick="switchTab('schedule')">MTGスケジュール</button>
-  <button class="tab" onclick="switchTab('tasks')">タスク</button>
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">ホーム</div>
+    <div class="topbar-right">
+      <span id="today-date" style="font-size:13px;color:#888;"></span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ホーム -->
+    <div class="page active" id="page-home">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="num" id="s-total">0</div>
+          <div class="lbl">顧客数</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" id="s-active">0</div>
+          <div class="lbl">稼働中</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" id="s-production">0</div>
+          <div class="lbl">制作中</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" id="s-tasks">0</div>
+          <div class="lbl">未完了タスク</div>
+          <div class="sub" id="s-overdue"></div>
+        </div>
+      </div>
+      <div class="dash-grid">
+        <div class="card">
+          <h3>📅 今日・直近のMTG</h3>
+          <div id="dash-mtg"><div class="empty"><span class="icon">📅</span>MTG予定がありません</div></div>
+        </div>
+        <div class="card">
+          <h3>⚠️ 期限が近いタスク</h3>
+          <div id="dash-tasks"><div class="empty"><span class="icon">✅</span>タスクがありません</div></div>
+        </div>
+        <div class="card">
+          <h3>🔨 制作中の顧客</h3>
+          <div id="dash-production"></div>
+        </div>
+        <div class="card">
+          <h3>📝 最近の改善メモ</h3>
+          <div id="dash-improvements"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 制作管理 -->
+    <div class="page" id="page-production">
+      <div class="toolbar">
+        <div style="font-size:14px;color:#888;">顧客ごとのShopify制作進捗を管理します</div>
+        <button class="btn btn-primary" onclick="openModal('prod')">＋ 制作プロジェクト追加</button>
+      </div>
+      <div id="production-list"></div>
+    </div>
+
+    <!-- 顧客管理 -->
+    <div class="page" id="page-clients">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input type="text" class="search-input" id="search-input" placeholder="顧客名で検索…" oninput="renderClients()">
+        </div>
+        <button class="btn btn-primary" onclick="openModal('client')">＋ 顧客追加</button>
+      </div>
+      <div id="client-list"></div>
+    </div>
+
+    <!-- MTGスケジュール -->
+    <div class="page" id="page-schedule">
+      <div class="toolbar">
+        <div style="font-size:14px;color:#888;">MTGの日程・議題・議事録を管理します</div>
+        <button class="btn btn-primary" onclick="openModal('mtg')">＋ MTG追加</button>
+      </div>
+      <div id="schedule-list"></div>
+    </div>
+
+    <!-- タスク -->
+    <div class="page" id="page-tasks">
+      <div class="toolbar">
+        <div style="font-size:14px;color:#888;">顧客ごとのタスクと期限を管理します</div>
+        <button class="btn btn-primary" onclick="openModal('task')">＋ タスク追加</button>
+      </div>
+      <div id="task-list-full"></div>
+    </div>
+
+  </div>
+</div>
 </div>
 
-<div class="content">
+<!-- ===== MODALS ===== -->
 
-  <!-- ダッシュボード -->
-  <div class="section active" id="tab-dashboard">
-    <div class="stat-grid">
-      <div class="stat-card"><div class="num" id="s-total">0</div><div class="lbl">顧客数</div></div>
-      <div class="stat-card"><div class="num" id="s-active">0</div><div class="lbl">稼働中</div></div>
-      <div class="stat-card"><div class="num" id="s-tasks">0</div><div class="lbl">未完了タスク</div></div>
-    </div>
-    <div class="card">
-      <h3>📅 直近のMTG予定</h3>
-      <div id="dash-mtg"><div class="empty">MTG予定がありません</div></div>
-    </div>
-    <div class="card">
-      <h3>✅ 期限が近いタスク</h3>
-      <div id="dash-tasks"><div class="empty">タスクがありません</div></div>
-    </div>
-  </div>
-
-  <!-- 顧客管理 -->
-  <div class="section" id="tab-clients">
-    <div class="toolbar">
-      <input type="text" class="search-input" id="search-input" placeholder="顧客名で検索…" oninput="renderClients()">
-      <button class="btn btn-primary" onclick="openModal('add')">＋ 顧客追加</button>
-    </div>
-    <div id="client-list"></div>
-  </div>
-
-  <!-- MTGスケジュール -->
-  <div class="section" id="tab-schedule">
-    <div class="toolbar">
-      <div style="font-size:15px;font-weight:600;">MTGスケジュール</div>
-      <button class="btn btn-primary" onclick="openModal('mtg')">＋ MTG追加</button>
-    </div>
-    <div id="schedule-list"></div>
-  </div>
-
-  <!-- タスク -->
-  <div class="section" id="tab-tasks">
-    <div class="toolbar">
-      <div style="font-size:15px;font-weight:600;">タスク一覧</div>
-      <button class="btn btn-primary" onclick="openModal('task')">＋ タスク追加</button>
-    </div>
-    <div id="task-list"></div>
-  </div>
-
-</div>
-
-<!-- 顧客追加モーダル -->
-<div class="modal-overlay" id="modal-add">
+<!-- 顧客追加 -->
+<div class="modal-overlay" id="modal-client">
   <div class="modal">
-    <h3>顧客を追加</h3>
+    <h3>👤 顧客を追加</h3>
     <div class="form-grid">
       <div class="form-group"><label>顧客名 *</label><input type="text" id="f-name" placeholder="例：山田花子"></div>
       <div class="form-group"><label>ステータス</label>
@@ -177,16 +315,16 @@
       <div class="form-group full"><label>メモ / 商品ジャンル</label><textarea id="f-memo" placeholder="取り扱い商品、ブランドの特徴など"></textarea></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('add')">キャンセル</button>
+      <button class="btn btn-secondary" onclick="closeModal('client')">キャンセル</button>
       <button class="btn btn-primary" onclick="addClient()">追加する</button>
     </div>
   </div>
 </div>
 
-<!-- 顧客編集モーダル -->
-<div class="modal-overlay" id="modal-edit">
+<!-- 顧客編集 -->
+<div class="modal-overlay" id="modal-edit-client">
   <div class="modal">
-    <h3>顧客情報を編集</h3>
+    <h3>✏️ 顧客情報を編集</h3>
     <input type="hidden" id="ef-id">
     <div class="form-grid">
       <div class="form-group"><label>顧客名 *</label><input type="text" id="ef-name"></div>
@@ -205,21 +343,31 @@
       <div class="form-group full"><label>改善メモを追加</label><textarea id="ef-imp" placeholder="MTGで話した内容、改善提案など…"></textarea></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('edit')">キャンセル</button>
-      <button class="btn btn-primary" onclick="saveEdit()">保存する</button>
+      <button class="btn btn-secondary" onclick="closeModal('edit-client')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveEditClient()">保存する</button>
     </div>
   </div>
 </div>
 
-<!-- MTG追加モーダル -->
+<!-- 顧客詳細 -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal" style="max-width:640px;">
+    <div id="detail-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('detail')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- MTG追加 -->
 <div class="modal-overlay" id="modal-mtg">
   <div class="modal">
-    <h3>MTGを追加</h3>
+    <h3>📅 MTGを追加</h3>
     <div class="form-grid">
       <div class="form-group"><label>顧客 *</label><select id="mf-client" style="width:100%;"></select></div>
       <div class="form-group"><label>日付 *</label><input type="date" id="mf-date"></div>
-      <div class="form-group full"><label>議題</label><textarea id="mf-topic" placeholder="話し合う内容、確認事項など"></textarea></div>
-      <div class="form-group full"><label>議事録・決定事項</label><textarea id="mf-minutes" placeholder="MTG後に記録してください"></textarea></div>
+      <div class="form-group full"><label>議題</label><textarea id="mf-topic" placeholder="話し合う内容、確認事項など" style="min-height:60px;"></textarea></div>
+      <div class="form-group full"><label>議事録・決定事項</label><textarea id="mf-minutes" placeholder="MTG後に記録してください" style="min-height:60px;"></textarea></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('mtg')">キャンセル</button>
@@ -228,10 +376,10 @@
   </div>
 </div>
 
-<!-- タスク追加モーダル -->
+<!-- タスク追加 -->
 <div class="modal-overlay" id="modal-task">
   <div class="modal">
-    <h3>タスクを追加</h3>
+    <h3>✅ タスクを追加</h3>
     <div class="form-grid">
       <div class="form-group"><label>顧客 *</label><select id="tf-client" style="width:100%;"></select></div>
       <div class="form-group"><label>期限</label><input type="date" id="tf-due"></div>
@@ -244,12 +392,28 @@
   </div>
 </div>
 
-<!-- 顧客詳細モーダル -->
-<div class="modal-overlay" id="modal-detail">
-  <div class="modal" style="max-width:640px;">
-    <div id="detail-content"></div>
+<!-- 制作プロジェクト追加 -->
+<div class="modal-overlay" id="modal-prod">
+  <div class="modal">
+    <h3>🔨 制作プロジェクトを追加</h3>
+    <div class="form-grid">
+      <div class="form-group full"><label>顧客 *</label><select id="pf-client" style="width:100%;"></select></div>
+      <div class="form-group full"><label>現在のフェーズ</label>
+        <select id="pf-phase">
+          <option value="0">① ヒアリング</option>
+          <option value="1">② 設計・テーマ選定</option>
+          <option value="2">③ 構築</option>
+          <option value="3">④ デザイン・コンテンツ</option>
+          <option value="4">⑤ テスト・確認</option>
+          <option value="5">⑥ 公開</option>
+          <option value="6">⑦ 運用・改善</option>
+        </select>
+      </div>
+      <div class="form-group full"><label>メモ</label><textarea id="pf-memo" placeholder="制作に関する特記事項など" style="min-height:60px;"></textarea></div>
+    </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('detail')">閉じる</button>
+      <button class="btn btn-secondary" onclick="closeModal('prod')">キャンセル</button>
+      <button class="btn btn-primary" onclick="addProduction()">追加する</button>
     </div>
   </div>
 </div>
@@ -259,10 +423,44 @@ const SUPABASE_URL = 'https://rrmgwyvzinlbexpzevsa.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_rLMPo0F9Jwv7Z2QNyrGT5A_eC2MRuHj';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let clients = [], mtgs = [], tasks = [], improvements = [];
+let clients = [], mtgs = [], tasks = [], improvements = [], productions = [];
 const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const PHASES = ['① ヒアリング','② 設計・テーマ選定','③ 構築','④ デザイン・コンテンツ','⑤ テスト・確認','⑥ 公開','⑦ 運用・改善'];
+const CHECKLISTS = [
+  ['ブランドヒアリング完了','競合サイト調査','参考サイト収集','商品情報の整理','ターゲット顧客の確認'],
+  ['テーマ選定','サイト構成決定','ページ設計','Shopifyアカウント作成','ドメイン設定'],
+  ['テーマインストール','ヘッダー/フッター設定','商品登録','コレクション設定','決済設定','配送設定'],
+  ['バナー制作','商品画像確認','コピーライティング','SP表示確認','PC表示確認'],
+  ['テスト購入','全ページリンク確認','フォーム動作確認','クライアント確認','修正対応完了'],
+  ['公開作業','Googleアナリティクス設定','Search Console設定','SNSプロフィールURL更新','公開確認'],
+  ['初回レポート作成','改善提案','月次MTG実施','修正対応','次月計画']
+];
+
+// 制作管理テーブルはローカルで管理（Supabaseに追加するか後で決める）
+const PROD_KEY = 'ecbutler-productions-v1';
+function loadProductions() {
+  try { const d = localStorage.getItem(PROD_KEY); return d ? JSON.parse(d) : []; } catch(e) { return []; }
+}
+function saveProductions() {
+  try { localStorage.setItem(PROD_KEY, JSON.stringify(productions)); } catch(e) {}
+}
+
+// チェックリストもローカル管理
+const CL_KEY = 'ecbutler-checklists-v1';
+let checklists = {};
+function loadChecklists() {
+  try { const d = localStorage.getItem(CL_KEY); return d ? JSON.parse(d) : {}; } catch(e) { return {}; }
+}
+function saveChecklists() {
+  try { localStorage.setItem(CL_KEY, JSON.stringify(checklists)); } catch(e) {}
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
 async function loadAll() {
+  const today = new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric',weekday:'short'});
+  document.getElementById('today-date').textContent = today;
+
   const [c, m, t, i] = await Promise.all([
     sb.from('clients').select('*').order('created_at', { ascending: false }),
     sb.from('mtgs').select('*').order('date', { ascending: true }),
@@ -273,12 +471,13 @@ async function loadAll() {
   mtgs = m.data || [];
   tasks = t.data || [];
   improvements = i.data || [];
-  document.getElementById('top-count').textContent = clients.length + '件の顧客';
+  productions = loadProductions();
+  checklists = loadChecklists();
   render();
 }
 
 function statusBadge(s) {
-  const map = { active: ['badge-active','稼働中'], trial: ['badge-trial','トライアル'], pause: ['badge-pause','一時停止'] };
+  const map = { active:['badge-active','稼働中'], trial:['badge-trial','トライアル'], pause:['badge-pause','一時停止'] };
   const [cls, lbl] = map[s] || map.pause;
   return `<span class="badge ${cls}">${lbl}</span>`;
 }
@@ -289,22 +488,30 @@ function fmtDate(d) {
   return `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`;
 }
 
-function switchTab(id) {
-  const ids = ['dashboard','clients','schedule','tasks'];
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ids[i] === id));
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
+function showPage(id) {
+  const titles = { home:'ホーム', production:'制作管理', clients:'顧客管理', schedule:'MTGスケジュール', tasks:'タスク' };
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('page-title').textContent = titles[id] || id;
+  const navItems = document.querySelectorAll('.nav-item');
+  const pageIds = ['home','production','clients','schedule','tasks'];
+  navItems.forEach((n,i) => { if(pageIds[i] === id) n.classList.add('active'); });
+  render();
 }
 
 function openModal(type) {
-  if (type === 'mtg' || type === 'task') {
-    const selId = type === 'mtg' ? 'mf-client' : 'tf-client';
-    document.getElementById(selId).innerHTML = clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('') || '<option>顧客がいません</option>';
+  if (['mtg','task','prod'].includes(type)) {
+    const selId = { mtg:'mf-client', task:'tf-client', prod:'pf-client' }[type];
+    document.getElementById(selId).innerHTML = clients.length
+      ? clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+      : '<option value="">顧客がいません</option>';
   }
   document.getElementById('modal-' + type).classList.add('open');
 }
 function closeModal(type) { document.getElementById('modal-' + type).classList.remove('open'); }
 
+// ===== CLIENT CRUD =====
 async function addClient() {
   const name = document.getElementById('f-name').value.trim();
   if (!name) { alert('顧客名を入力してください'); return; }
@@ -316,10 +523,11 @@ async function addClient() {
     next_mtg: document.getElementById('f-nextmtg').value || null,
     memo: document.getElementById('f-memo').value.trim()
   });
-  closeModal('add'); await loadAll();
+  ['f-name','f-url','f-sns','f-start','f-nextmtg','f-memo'].forEach(id => document.getElementById(id).value = '');
+  closeModal('client'); await loadAll();
 }
 
-function openEdit(id) {
+function openEditClient(id) {
   const c = clients.find(x => x.id === id); if (!c) return;
   document.getElementById('ef-id').value = c.id;
   document.getElementById('ef-name').value = c.name;
@@ -330,10 +538,10 @@ function openEdit(id) {
   document.getElementById('ef-nextmtg').value = c.next_mtg || '';
   document.getElementById('ef-memo').value = c.memo || '';
   document.getElementById('ef-imp').value = '';
-  document.getElementById('modal-edit').classList.add('open');
+  document.getElementById('modal-edit-client').classList.add('open');
 }
 
-async function saveEdit() {
+async function saveEditClient() {
   const id = document.getElementById('ef-id').value;
   await sb.from('clients').update({
     name: document.getElementById('ef-name').value.trim(),
@@ -346,15 +554,72 @@ async function saveEdit() {
   }).eq('id', id);
   const imp = document.getElementById('ef-imp').value.trim();
   if (imp) await sb.from('improvements').insert({ client_id: id, text: imp, date: new Date().toISOString().slice(0,10) });
-  closeModal('edit'); await loadAll();
+  closeModal('edit-client'); await loadAll();
+}
+
+function openProduction(clientId, clientName) {
+  const url = `production.html?clientId=${clientId}&clientName=${encodeURIComponent(clientName)}`;
+  window.open(url, '_blank');
 }
 
 async function deleteClient(id) {
   if (!confirm('この顧客を削除しますか？')) return;
   await sb.from('clients').delete().eq('id', id);
+  productions = productions.filter(p => p.clientId !== id);
+  saveProductions();
   await loadAll();
 }
 
+function openDetail(id) {
+  const c = clients.find(x => x.id === id); if (!c) return;
+  const cMtgs = mtgs.filter(m => m.client_id === id);
+  const cTasks = tasks.filter(t => t.client_id === id);
+  const cImps = improvements.filter(i => i.client_id === id);
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:#e8f5e2;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#2d4a28;">${c.name.slice(0,1)}</div>
+      <div><div style="font-size:19px;font-weight:800;margin-bottom:4px;">${c.name}</div>${statusBadge(c.status)}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div><div style="font-size:10px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:3px;">ショップURL</div>${c.url?`<a href="${c.url}" target="_blank" style="font-size:13px;color:#5C8A52;">${c.url}</a>`:'<span style="font-size:13px;color:#ccc;">未設定</span>'}</div>
+      <div><div style="font-size:10px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:3px;">SNS</div>${c.sns?`<a href="${c.sns}" target="_blank" style="font-size:13px;color:#5C8A52;">${c.sns}</a>`:'<span style="font-size:13px;color:#ccc;">未設定</span>'}</div>
+      <div><div style="font-size:10px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:3px;">契約開始</div><span style="font-size:13px;">${fmtDate(c.start_date)}</span></div>
+      <div><div style="font-size:10px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:3px;">次回MTG</div><span style="font-size:13px;">${fmtDate(c.next_mtg)}</span></div>
+    </div>
+    ${c.memo?`<div class="memo-text" style="margin-bottom:16px;">${c.memo}</div>`:''}
+    <div class="detail-tabs">
+      <button class="detail-tab active" onclick="switchDetailTab('mtg')">MTG (${cMtgs.length})</button>
+      <button class="detail-tab" onclick="switchDetailTab('task')">タスク (${cTasks.length})</button>
+      <button class="detail-tab" onclick="switchDetailTab('imp')">改善履歴 (${cImps.length})</button>
+    </div>
+    <div class="detail-panel active" id="detail-mtg">
+      ${cMtgs.length ? cMtgs.map(m => {
+        const dt = new Date(m.date+'T00:00:00');
+        return `<div class="mtg-item"><div class="mtg-date"><div class="day">${dt.getDate()}</div><div class="mon">${MONTHS[dt.getMonth()]}</div></div><div class="mtg-body"><div class="cn">${m.topic||'議題未設定'}</div>${m.minutes?`<div class="tp" style="margin-top:4px;">${m.minutes}</div>`:''}</div></div>`;
+      }).join('') : '<div class="empty"><span class="icon">📅</span>MTG履歴がありません</div>'}
+    </div>
+    <div class="detail-panel" id="detail-task">
+      ${cTasks.length ? cTasks.map(t => {
+        const today = new Date().toISOString().slice(0,10);
+        const overdue = t.due_date && t.due_date < today && !t.done;
+        return `<div class="task-item"><input type="checkbox" class="task-check" ${t.done?'checked':''} onchange="toggleTask('${t.id}',${t.done})"><span class="task-title ${t.done?'done':''}">${t.title}</span>${t.due_date?`<span class="task-due ${overdue?'overdue':''}">${fmtDate(t.due_date)}</span>`:''}</div>`;
+      }).join('') : '<div class="empty"><span class="icon">✅</span>タスクがありません</div>'}
+    </div>
+    <div class="detail-panel" id="detail-imp">
+      ${cImps.length ? cImps.map(i => `<div class="imp-item"><div class="imp-date">${i.date}</div><div class="imp-text">${i.text}</div></div>`).join('') : '<div class="empty"><span class="icon">📝</span>改善履歴がありません</div>'}
+    </div>
+  `;
+  document.getElementById('modal-detail').classList.add('open');
+}
+
+function switchDetailTab(id) {
+  const ids = ['mtg','task','imp'];
+  document.querySelectorAll('.detail-tab').forEach((t,i) => t.classList.toggle('active', ids[i] === id));
+  document.querySelectorAll('.detail-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('detail-' + id).classList.add('active');
+}
+
+// ===== MTG CRUD =====
 async function addMtg() {
   const date = document.getElementById('mf-date').value;
   if (!date) { alert('日付を入力してください'); return; }
@@ -363,6 +628,7 @@ async function addMtg() {
     date, topic: document.getElementById('mf-topic').value.trim(),
     minutes: document.getElementById('mf-minutes').value.trim()
   });
+  ['mf-date','mf-topic','mf-minutes'].forEach(id => document.getElementById(id).value = '');
   closeModal('mtg'); await loadAll();
 }
 
@@ -372,6 +638,7 @@ async function deleteMtg(id) {
   await loadAll();
 }
 
+// ===== TASK CRUD =====
 async function addTask() {
   const title = document.getElementById('tf-title').value.trim();
   if (!title) { alert('タスク内容を入力してください'); return; }
@@ -379,6 +646,7 @@ async function addTask() {
     client_id: document.getElementById('tf-client').value,
     title, due_date: document.getElementById('tf-due').value || null
   });
+  ['tf-due','tf-title'].forEach(id => document.getElementById(id).value = '');
   closeModal('task'); await loadAll();
 }
 
@@ -393,94 +661,147 @@ async function deleteTask(id) {
   await loadAll();
 }
 
-function openDetail(id) {
-  const c = clients.find(x => x.id === id); if (!c) return;
-  const cMtgs = mtgs.filter(m => m.client_id === id);
-  const cTasks = tasks.filter(t => t.client_id === id);
-  const cImps = improvements.filter(i => i.client_id === id);
-  document.getElementById('detail-content').innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-      <div style="width:48px;height:48px;border-radius:50%;background:#e8f5e2;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#5C8A52;">${c.name.slice(0,1)}</div>
-      <div><div style="font-size:18px;font-weight:700;">${c.name}</div>${statusBadge(c.status)}</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-      <div><div style="font-size:11px;color:#999;margin-bottom:2px;">ショップURL</div>${c.url ? `<a href="${c.url}" target="_blank" style="font-size:13px;color:#5C8A52;">${c.url}</a>` : '<span style="font-size:13px;color:#aaa;">未設定</span>'}</div>
-      <div><div style="font-size:11px;color:#999;margin-bottom:2px;">SNS</div>${c.sns ? `<a href="${c.sns}" target="_blank" style="font-size:13px;color:#5C8A52;">${c.sns}</a>` : '<span style="font-size:13px;color:#aaa;">未設定</span>'}</div>
-      <div><div style="font-size:11px;color:#999;margin-bottom:2px;">契約開始</div><span style="font-size:13px;">${fmtDate(c.start_date)}</span></div>
-      <div><div style="font-size:11px;color:#999;margin-bottom:2px;">次回MTG</div><span style="font-size:13px;">${fmtDate(c.next_mtg)}</span></div>
-    </div>
-    ${c.memo ? `<div style="font-size:13px;color:#555;background:#f8f8f8;padding:10px 14px;border-radius:8px;margin-bottom:16px;line-height:1.6;">${c.memo}</div>` : ''}
-    <div class="tabs-inner">
-      <button class="tab-inner active" onclick="switchDetail('mtg')">MTG履歴 (${cMtgs.length})</button>
-      <button class="tab-inner" onclick="switchDetail('task')">タスク (${cTasks.length})</button>
-      <button class="tab-inner" onclick="switchDetail('imp')">改善履歴 (${cImps.length})</button>
-    </div>
-    <div class="detail-section active" id="detail-mtg">
-      ${cMtgs.length ? cMtgs.map(m => `<div class="mtg-item"><div class="mtg-date"><div class="day">${new Date(m.date+'T00:00:00').getDate()}</div><div class="mon">${MONTHS[new Date(m.date+'T00:00:00').getMonth()]}</div></div><div class="mtg-body"><div class="topic">${m.topic||'議題未設定'}</div>${m.minutes?`<div class="minutes">${m.minutes}</div>`:''}</div></div>`).join('') : '<div class="empty">MTG履歴がありません</div>'}
-    </div>
-    <div class="detail-section" id="detail-task">
-      ${cTasks.length ? cTasks.map(t => `<div class="task-item"><input type="checkbox" class="task-check" ${t.done?'checked':''} onchange="toggleTask('${t.id}',${t.done})"><span class="task-title ${t.done?'done':''}">${t.title}</span>${t.due_date?`<span class="task-due">${fmtDate(t.due_date)}</span>`:''}</div>`).join('') : '<div class="empty">タスクがありません</div>'}
-    </div>
-    <div class="detail-section" id="detail-imp">
-      ${cImps.length ? cImps.map(i => `<div class="imp-item"><div class="imp-date">${i.date}</div><div class="imp-text">${i.text}</div></div>`).join('') : '<div class="empty">改善履歴がありません</div>'}
-    </div>
-  `;
-  document.getElementById('modal-detail').classList.add('open');
+// ===== PRODUCTION =====
+function addProduction() {
+  const clientId = document.getElementById('pf-client').value;
+  if (!clientId) { alert('顧客を選択してください'); return; }
+  if (productions.find(p => p.clientId === clientId)) { alert('この顧客の制作プロジェクトはすでに存在します'); return; }
+  productions.push({
+    id: uid(), clientId,
+    phase: parseInt(document.getElementById('pf-phase').value),
+    memo: document.getElementById('pf-memo').value.trim(),
+    createdAt: new Date().toISOString()
+  });
+  document.getElementById('pf-memo').value = '';
+  saveProductions();
+  closeModal('prod'); render();
 }
 
-function switchDetail(id) {
-  const ids = ['mtg','task','imp'];
-  document.querySelectorAll('.tab-inner').forEach((t,i) => t.classList.toggle('active', ids[i] === id));
-  document.querySelectorAll('.detail-section').forEach(s => s.classList.remove('active'));
-  document.getElementById('detail-' + id).classList.add('active');
+function updatePhase(prodId, phase) {
+  const p = productions.find(x => x.id === prodId);
+  if (p) { p.phase = phase; saveProductions(); render(); }
 }
 
+function toggleChecklist(prodId, phaseIdx, itemIdx) {
+  const key = `${prodId}-${phaseIdx}-${itemIdx}`;
+  checklists[key] = !checklists[key];
+  saveChecklists(); render();
+}
+
+function deleteProduction(id) {
+  if (!confirm('この制作プロジェクトを削除しますか？')) return;
+  productions = productions.filter(p => p.id !== id);
+  saveProductions(); render();
+}
+
+// ===== RENDER =====
 function renderDashboard() {
+  const today = new Date().toISOString().slice(0,10);
   document.getElementById('s-total').textContent = clients.length;
   document.getElementById('s-active').textContent = clients.filter(c => c.status === 'active').length;
-  const pending = tasks.filter(t => !t.done).length;
-  document.getElementById('s-tasks').textContent = pending;
+  document.getElementById('s-production').textContent = productions.filter(p => p.phase < 6).length;
+  const pending = tasks.filter(t => !t.done);
+  document.getElementById('s-tasks').textContent = pending.length;
+  const overdue = pending.filter(t => t.due_date && t.due_date < today).length;
+  document.getElementById('s-overdue').textContent = overdue > 0 ? `⚠️ ${overdue}件期限超過` : '';
 
-  const upcoming = [...mtgs].slice(0,4);
+  // MTG
+  const upcomingMtgs = [...mtgs].filter(m => m.date >= today).slice(0,4);
   const dm = document.getElementById('dash-mtg');
-  dm.innerHTML = upcoming.length ? upcoming.map(m => {
+  dm.innerHTML = upcomingMtgs.length ? upcomingMtgs.map(m => {
     const c = clients.find(x => x.id === m.client_id);
     const dt = new Date(m.date + 'T00:00:00');
-    return `<div class="mtg-item"><div class="mtg-date"><div class="day">${dt.getDate()}</div><div class="mon">${MONTHS[dt.getMonth()]}</div></div><div class="mtg-body"><div class="client-nm">${c?.name||'不明'}</div><div class="topic">${m.topic||'議題未設定'}</div></div></div>`;
-  }).join('') : '<div class="empty">MTG予定がありません</div>';
+    return `<div class="mtg-item"><div class="mtg-date"><div class="day">${dt.getDate()}</div><div class="mon">${MONTHS[dt.getMonth()]}</div></div><div class="mtg-body"><div class="cn">${c?.name||'不明'}</div><div class="tp">${m.topic||'議題未設定'}</div></div></div>`;
+  }).join('') : '<div class="empty"><span class="icon">📅</span>直近のMTGはありません</div>';
 
-  const pendingTasks = tasks.filter(t => !t.done).slice(0,5);
+  // Tasks
+  const urgentTasks = pending.filter(t => t.due_date).sort((a,b) => a.due_date.localeCompare(b.due_date)).slice(0,5);
   const dt2 = document.getElementById('dash-tasks');
-  dt2.innerHTML = pendingTasks.length ? pendingTasks.map(t => {
+  dt2.innerHTML = urgentTasks.length ? urgentTasks.map(t => {
     const c = clients.find(x => x.id === t.client_id);
-    const today = new Date().toISOString().slice(0,10);
-    const overdue = t.due_date && t.due_date < today;
-    return `<div class="task-item"><input type="checkbox" class="task-check" onchange="toggleTask('${t.id}',${t.done})"><span class="task-title">[${c?.name||'?'}] ${t.title}</span>${t.due_date?`<span class="task-due ${overdue?'overdue':''}">${fmtDate(t.due_date)}</span>`:''}</div>`;
-  }).join('') : '<div class="empty">未完了タスクがありません</div>';
+    const overdue = t.due_date < today;
+    return `<div class="task-item"><input type="checkbox" class="task-check" onchange="toggleTask('${t.id}',${t.done})"><span class="task-title">${t.title}</span><span class="task-client">${c?.name||'?'}</span>${t.due_date?`<span class="task-due ${overdue?'overdue':''}">${fmtDate(t.due_date)}</span>`:''}</div>`;
+  }).join('') : '<div class="empty"><span class="icon">✅</span>期限が近いタスクはありません</div>';
+
+  // Production
+  const dp = document.getElementById('dash-production');
+  const activeProds = productions.filter(p => p.phase < 6).slice(0,3);
+  dp.innerHTML = activeProds.length ? activeProds.map(p => {
+    const c = clients.find(x => x.id === p.clientId);
+    const pct = Math.round((p.phase / 6) * 100);
+    return `<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:13px;font-weight:600;">${c?.name||'不明'}</span><span style="font-size:12px;color:#5C8A52;">${PHASES[p.phase]}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></div>`;
+  }).join('') : '<div class="empty"><span class="icon">🔨</span>制作中のプロジェクトがありません</div>';
+
+  // Improvements
+  const di = document.getElementById('dash-improvements');
+  const recentImps = [...improvements].slice(0,4);
+  di.innerHTML = recentImps.length ? recentImps.map(i => {
+    const c = clients.find(x => x.id === i.client_id);
+    return `<div class="imp-item"><div class="imp-date">${c?.name||'不明'} · ${i.date}</div><div class="imp-text">${i.text.length>60?i.text.slice(0,60)+'…':i.text}</div></div>`;
+  }).join('') : '<div class="empty"><span class="icon">📝</span>改善メモがありません</div>';
+}
+
+function renderProduction() {
+  const el = document.getElementById('production-list');
+  if (!productions.length) { el.innerHTML = '<div class="empty"><span class="icon">🔨</span>制作プロジェクトがありません</div>'; return; }
+  el.innerHTML = productions.map(p => {
+    const c = clients.find(x => x.id === p.clientId);
+    const phaseItems = CHECKLISTS[p.phase] || [];
+    const checkedCount = phaseItems.filter((_,i) => checklists[`${p.id}-${p.phase}-${i}`]).length;
+    const pct = phaseItems.length ? Math.round((checkedCount / phaseItems.length) * 100) : 0;
+    return `<div class="prod-card">
+      <div class="prod-header">
+        <div class="prod-name">${c?.name||'不明'}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="prod-phase">${PHASES[p.phase]}</span>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduction('${p.id}')">削除</button>
+        </div>
+      </div>
+      <div class="phase-bar">
+        ${PHASES.map((ph,i) => `<div class="phase-step ${i < p.phase ? 'done' : i === p.phase ? 'current' : ''}" onclick="updatePhase('${p.id}',${i})" title="${ph}">${i+1}</div>`).join('')}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:12px;color:#888;">現フェーズ進捗</span>
+        <span style="font-size:12px;font-weight:700;color:#5C8A52;">${checkedCount}/${phaseItems.length} (${pct}%)</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div>
+        ${phaseItems.map((item,i) => `
+          <div class="checklist-item">
+            <input type="checkbox" class="checklist-check" ${checklists[`${p.id}-${p.phase}-${i}`]?'checked':''} onchange="toggleChecklist('${p.id}',${p.phase},${i})">
+            <span class="checklist-label ${checklists[`${p.id}-${p.phase}-${i}`]?'done':''}">${item}</span>
+          </div>`).join('')}
+      </div>
+      ${p.memo?`<div class="memo-text" style="margin-top:12px;">${p.memo}</div>`:''}
+    </div>`;
+  }).join('');
 }
 
 function renderClients() {
   const q = (document.getElementById('search-input')?.value||'').toLowerCase();
   const filtered = clients.filter(c => c.name.toLowerCase().includes(q));
   const el = document.getElementById('client-list');
-  if (!filtered.length) { el.innerHTML = '<div class="empty">顧客がいません</div>'; return; }
+  if (!filtered.length) { el.innerHTML = '<div class="empty"><span class="icon">👥</span>顧客がいません</div>'; return; }
   el.innerHTML = filtered.map(c => {
     const cTasks = tasks.filter(t => t.client_id === c.id && !t.done).length;
+    const cImps = improvements.filter(i => i.client_id === c.id).length;
     return `<div class="client-card">
       <div class="client-header">
-        <div class="client-name">${c.name} ${statusBadge(c.status)} ${cTasks>0?`<span style="font-size:11px;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:20px;">${cTasks}件のタスク</span>`:''}
+        <div class="client-name">${c.name} ${statusBadge(c.status)}
+          ${cTasks>0?`<span class="badge" style="background:#fff3e0;color:#bf5000;">${cTasks}件のタスク</span>`:''}
         </div>
-        <div class="action-row">
+        <div class="client-actions">
           <button class="btn btn-secondary btn-sm" onclick="openDetail('${c.id}')">詳細</button>
-          <button class="btn btn-secondary btn-sm" onclick="openEdit('${c.id}')">編集</button>
+          <button class="btn btn-secondary btn-sm" onclick="openEditClient('${c.id}')">編集</button>
+          <button class="btn btn-orange btn-sm" onclick="openProduction('${c.id}','${c.name}')">🔨 制作</button>
           <button class="btn btn-danger btn-sm" onclick="deleteClient('${c.id}')">削除</button>
         </div>
       </div>
       <div class="info-row">
-        <div class="info-item"><label>ショップURL</label>${c.url?`<a href="${c.url}" target="_blank">${c.url.replace('https://','').slice(0,25)}</a>`:'<span style="color:#aaa;">未設定</span>'}</div>
+        <div class="info-item"><label>ショップURL</label>${c.url?`<a href="${c.url}" target="_blank">${c.url.replace('https://','').slice(0,28)}</a>`:'<span style="color:#ccc;">未設定</span>'}</div>
         <div class="info-item"><label>次回MTG</label><span>${fmtDate(c.next_mtg)}</span></div>
         <div class="info-item"><label>契約開始</label><span>${fmtDate(c.start_date)}</span></div>
-        <div class="info-item"><label>改善記録</label><span>${improvements.filter(i=>i.client_id===c.id).length}件</span></div>
+        <div class="info-item"><label>改善記録</label><span>${cImps}件</span></div>
       </div>
       ${c.memo?`<div class="memo-text">${c.memo.length>100?c.memo.slice(0,100)+'…':c.memo}</div>`:''}
     </div>`;
@@ -489,44 +810,51 @@ function renderClients() {
 
 function renderSchedule() {
   const el = document.getElementById('schedule-list');
-  if (!mtgs.length) { el.innerHTML = '<div class="empty">MTG予定がありません</div>'; return; }
-  el.innerHTML = `<div class="card">${mtgs.map(m => {
+  if (!mtgs.length) { el.innerHTML = '<div class="empty"><span class="icon">📅</span>MTG予定がありません</div>'; return; }
+  el.innerHTML = mtgs.map(m => {
     const c = clients.find(x => x.id === m.client_id);
     const dt = new Date(m.date + 'T00:00:00');
-    return `<div class="mtg-item">
-      <div class="mtg-date"><div class="day">${dt.getDate()}</div><div class="mon">${MONTHS[dt.getMonth()]}</div></div>
-      <div class="mtg-body">
-        <div class="client-nm">${c?.name||'不明'}</div>
-        <div class="topic">${m.topic||'議題未設定'}</div>
-        ${m.minutes?`<div class="minutes">${m.minutes}</div>`:''}
+    return `<div class="schedule-card">
+      <div class="schedule-date"><div class="day">${dt.getDate()}</div><div class="mon">${MONTHS[dt.getMonth()]}</div></div>
+      <div class="schedule-body">
+        <div class="schedule-client">${c?.name||'不明'}</div>
+        <div class="schedule-topic">${m.topic||'議題未設定'}</div>
+        ${m.minutes?`<div class="schedule-minutes">${m.minutes}</div>`:''}
       </div>
       <button class="btn btn-danger btn-sm" onclick="deleteMtg('${m.id}')">削除</button>
     </div>`;
-  }).join('')}</div>`;
+  }).join('');
 }
 
 function renderTasks() {
-  const el = document.getElementById('task-list');
+  const today = new Date().toISOString().slice(0,10);
   const pending = tasks.filter(t => !t.done);
   const done = tasks.filter(t => t.done);
-  const today = new Date().toISOString().slice(0,10);
-  const renderTaskItem = t => {
+  const el = document.getElementById('task-list-full');
+  const renderItem = t => {
     const c = clients.find(x => x.id === t.client_id);
     const overdue = t.due_date && t.due_date < today && !t.done;
     return `<div class="task-item">
       <input type="checkbox" class="task-check" ${t.done?'checked':''} onchange="toggleTask('${t.id}',${t.done})">
-      <span class="task-title ${t.done?'done':''}">[${c?.name||'?'}] ${t.title}</span>
+      <span class="task-client">${c?.name||'?'}</span>
+      <span class="task-title ${t.done?'done':''}">${t.title}</span>
       ${t.due_date?`<span class="task-due ${overdue?'overdue':''}">${fmtDate(t.due_date)}</span>`:''}
       <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">削除</button>
     </div>`;
   };
   el.innerHTML = `
-    <div class="card"><h3>未完了 (${pending.length})</h3>${pending.length?pending.map(renderTaskItem).join(''):'<div class="empty">未完了タスクがありません</div>'}</div>
-    ${done.length?`<div class="card"><h3>完了済み (${done.length})</h3>${done.map(renderTaskItem).join('')}</div>`:''}
+    <div class="card"><h3>⏳ 未完了 (${pending.length}件)</h3>${pending.length?pending.map(renderItem).join(''):'<div class="empty"><span class="icon">✅</span>未完了タスクがありません</div>'}</div>
+    ${done.length?`<div class="card"><h3 style="color:#aaa;">✅ 完了済み (${done.length}件)</h3>${done.map(renderItem).join('')}</div>`:''}
   `;
 }
 
-function render() { renderDashboard(); renderClients(); renderSchedule(); renderTasks(); }
+function render() {
+  renderDashboard();
+  renderProduction();
+  renderClients();
+  renderSchedule();
+  renderTasks();
+}
 
 loadAll();
 </script>
