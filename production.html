@@ -495,6 +495,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentClient = null;
 let currentPhase = 0;
+let currentProductionId = null;
 let uploadedFile = null;
 let hearingData = {};
 
@@ -502,11 +503,44 @@ async function init() {
   const params = new URLSearchParams(window.location.search);
   const clientId = params.get('clientId');
   const clientName = params.get('clientName');
+  const productionId = params.get('productionId');
+  const phase = params.get('phase');
+
   if (clientId && clientName) {
     currentClient = { id: clientId, name: decodeURIComponent(clientName) };
+    currentProductionId = productionId || null;
     document.getElementById('header-client').textContent = currentClient.name;
-    document.getElementById('client-overlay').style.display = 'none';
+
+    // 途中再開の場合
+    if (productionId && phase !== null) {
+      const phaseNum = parseInt(phase);
+      // Supabaseから進捗を読み込む
+      const { data } = await sb.from('productions').select('*').eq('id', productionId).single();
+      if (data) {
+        hearingData = {};
+        goToPhase(phaseNum);
+      }
+    }
   }
+}
+
+async function saveProgressToDB(phase, checklist) {
+  if (!currentProductionId || !currentClient) return;
+  await sb.from('productions').update({
+    phase,
+    checklist: checklist || {},
+    updated_at: new Date().toISOString()
+  }).eq('id', currentProductionId);
+}
+
+async function createProductionInDB() {
+  if (!currentClient) return;
+  const { data } = await sb.from('productions').insert({
+    client_id: currentClient.id,
+    phase: 0,
+    checklist: {}
+  }).select().single();
+  if (data) currentProductionId = data.id;
 }
 
 function handleDragOver(e) {
@@ -708,6 +742,7 @@ function approveDesign() {
     { label: '予算', val: hearingData.budget || '未記入' },
   ].map(item => `<div class="spec-row"><div class="spec-label">${item.label}</div><div class="spec-val">${item.val}</div></div>`).join('');
 
+  await saveProgressToDB(2, {});
   goToPhase(2);
 }
 
