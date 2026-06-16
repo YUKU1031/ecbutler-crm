@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECバトラー 制作ツール</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green: #5C8A52;
+  --green-dark: #2d4a28;
+  --green-light: #e8f5e2;
+  --orange: #E8821A;
+  --bg: #f4f6f4;
+  --white: #fff;
+  --border: #e0e8e0;
+  --text: #1a1a1a;
+  --muted: #888;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+.header { background: var(--green-dark); color: white; padding: 0 24px; height: 52px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.header h1 { font-size: 15px; font-weight: 600; }
+.header-client { font-size: 13px; color: #8BC34A; font-weight: 600; margin-left: 4px; }
+.header-sep { color: rgba(255,255,255,0.3); }
+
+.phase-nav { background: var(--white); border-bottom: 1px solid var(--border); display: flex; flex-shrink: 0; overflow-x: auto; }
+.phase-tab { display: flex; align-items: center; gap: 7px; padding: 0 18px; height: 48px; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
+.phase-tab.active { color: var(--green-dark); border-bottom-color: var(--green); font-weight: 600; }
+.phase-tab.done { color: var(--green); }
+.phase-tab.locked { opacity: 0.35; pointer-events: none; }
+.phase-num { width: 20px; height: 20px; border-radius: 50%; background: #eee; color: var(--muted); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.phase-tab.active .phase-num { background: var(--green-dark); color: white; }
+.phase-tab.done .phase-num { background: var(--green); color: white; }
+
+.main { flex: 1; overflow-y: auto; padding: 28px; max-width: 860px; margin: 0 auto; width: 100%; }
+
+.btn { padding: 9px 18px; border-radius: 9px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 7px; transition: all 0.15s; }
+.btn-primary { background: var(--green); color: white; }
+.btn-primary:hover { background: var(--green-dark); }
+.btn-secondary { background: #f0f4f0; color: #444; border: 1px solid var(--border); }
+.btn-secondary:hover { background: #e4ece4; }
+.btn-orange { background: var(--orange); color: white; }
+.btn-orange:hover { background: #c96e12; }
+.btn-lg { padding: 12px 24px; font-size: 15px; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.card { background: var(--white); border-radius: 14px; padding: 22px 26px; margin-bottom: 18px; border: 0.5px solid var(--border); }
+.card h3 { font-size: 15px; font-weight: 600; color: var(--green-dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+.upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 24px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafcfa; }
+.upload-zone:hover, .upload-zone.dragover { border-color: var(--green); background: var(--green-light); }
+.upload-zone .icon { font-size: 36px; margin-bottom: 12px; display: block; }
+.upload-zone h4 { font-size: 15px; font-weight: 600; color: var(--green-dark); margin-bottom: 6px; }
+.upload-zone p { font-size: 13px; color: var(--muted); }
+.upload-zone input[type=file] { display: none; }
+
+.uploaded-file { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--green-light); border-radius: 10px; border: 1px solid #b8d8a8; margin-top: 16px; }
+.uploaded-file .file-icon { font-size: 24px; }
+.uploaded-file .file-info { flex: 1; }
+.uploaded-file .file-name { font-size: 14px; font-weight: 500; color: var(--green-dark); }
+.uploaded-file .file-size { font-size: 12px; color: var(--muted); }
+
+.status-banner { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 18px; display: flex; align-items: flex-start; gap: 10px; line-height: 1.5; }
+.status-info { background: var(--green-light); color: var(--green-dark); border: 1px solid #b8d8a8; }
+.status-warning { background: #fff3e0; color: #7a3600; border: 1px solid #ffd699; }
+.status-processing { background: #e8f0fe; color: #1a56a0; border: 1px solid #b3c8f5; }
+
+.extracted-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.extracted-item { background: #f8faf8; border-radius: 9px; padding: 12px 14px; border: 1px solid var(--border); }
+.extracted-item label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 5px; }
+.extracted-item .val { font-size: 13px; color: var(--text); line-height: 1.5; }
+.extracted-item .val.empty { color: #bbb; font-style: italic; }
+.extracted-item textarea, .extracted-item input { width: 100%; border: none; background: transparent; font-size: 13px; color: var(--text); resize: none; outline: none; font-family: inherit; line-height: 1.5; }
+
+.select-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 13px; cursor: pointer; transition: all 0.15s; background: var(--white); color: var(--text); }
+.chip:hover { border-color: var(--green); color: var(--green); }
+.chip.selected { background: var(--green); color: white; border-color: var(--green); font-weight: 500; }
+
+.theme-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.theme-card { border: 2px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.15s; background: var(--white); }
+.theme-card:hover { border-color: var(--green); }
+.theme-card.selected { border-color: var(--green); background: var(--green-light); }
+.theme-card .theme-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--green-dark); }
+.theme-card .theme-price { font-size: 12px; color: var(--orange); font-weight: 500; margin-bottom: 8px; }
+.theme-card .theme-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.theme-card .theme-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.theme-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #f0f4f0; color: var(--green-dark); }
+.theme-card.selected .theme-tag { background: #c8e6b8; }
+.recommended-badge { font-size: 10px; background: var(--orange); color: white; padding: 2px 8px; border-radius: 10px; font-weight: 600; display: inline-block; margin-bottom: 8px; }
+
+.color-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.color-card { border: 2px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.15s; }
+.color-card:hover { border-color: var(--green); }
+.color-card.selected { border-color: var(--green); }
+.color-preview { height: 80px; display: flex; }
+.color-swatch { flex: 1; }
+.color-card .color-name { font-size: 13px; font-weight: 600; padding: 10px 12px 4px; color: var(--text); }
+.color-card .color-desc { font-size: 11px; color: var(--muted); padding: 0 12px 10px; line-height: 1.5; }
+
+.page-list { display: flex; flex-direction: column; gap: 8px; }
+.page-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f8faf8; border-radius: 9px; border: 1px solid var(--border); }
+.page-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--green); flex-shrink: 0; }
+.page-item .page-name { font-size: 14px; flex: 1; }
+.page-item .page-required { font-size: 10px; color: var(--orange); font-weight: 600; background: #fff3e0; padding: 2px 7px; border-radius: 8px; }
+
+.spec-table { width: 100%; }
+.spec-row { display: flex; padding: 10px 0; border-bottom: 1px solid #f4f4f4; gap: 12px; }
+.spec-row:last-child { border-bottom: none; }
+.spec-label { font-size: 12px; color: var(--muted); width: 140px; flex-shrink: 0; padding-top: 2px; font-weight: 500; }
+.spec-val { font-size: 13px; color: var(--text); flex: 1; line-height: 1.6; }
+
+.progress-steps { display: flex; align-items: center; gap: 0; margin-bottom: 24px; }
+.progress-step { display: flex; align-items: center; gap: 0; flex: 1; }
+.step-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; z-index: 1; }
+.step-circle.done { background: var(--green); color: white; }
+.step-circle.current { background: var(--green-dark); color: white; }
+.step-circle.pending { background: #eee; color: var(--muted); }
+.step-line { flex: 1; height: 2px; background: #eee; }
+.step-line.done { background: var(--green); }
+
+.approve-bar { position: sticky; bottom: 0; background: white; border-top: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; margin: 0 -28px -28px; box-shadow: 0 -4px 12px rgba(0,0,0,0.06); }
+
+.ai-thinking { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: #f0f7ff; border-radius: 12px; border: 1px solid #b3c8f5; }
+.ai-thinking-header { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #1a56a0; }
+.ai-thinking-steps { display: flex; flex-direction: column; gap: 6px; }
+.ai-step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #444; }
+.ai-step .dot { width: 8px; height: 8px; border-radius: 50%; background: #b3c8f5; flex-shrink: 0; }
+.ai-step.done .dot { background: var(--green); }
+.ai-step.current .dot { background: var(--orange); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+.client-select-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.client-select-box { background: white; border-radius: 18px; padding: 36px; width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.client-select-box h2 { font-size: 20px; font-weight: 700; color: var(--green-dark); margin-bottom: 6px; }
+.client-select-box p { font-size: 14px; color: var(--muted); margin-bottom: 22px; }
+.client-select-box select { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 14px; outline: none; margin-bottom: 14px; font-family: inherit; }
+.client-select-box select:focus { border-color: var(--green); }
+
+input[type=text], textarea { padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 14px; outline: none; width: 100%; font-family: inherit; }
+input[type=text]:focus, textarea:focus { border-color: var(--green); }
+textarea { resize: vertical; min-height: 72px; }
+
+.section-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚔️ ECバトラー 制作ツール</h1>
+  <span class="header-sep">›</span>
+  <span class="header-client" id="header-client">顧客を選択</span>
+</div>
+
+<div class="phase-nav">
+  <div class="phase-tab active" id="tab-0"><div class="phase-num">1</div>ヒアリング</div>
+  <div class="phase-tab locked" id="tab-1"><div class="phase-num">2</div>設計・テーマ</div>
+  <div class="phase-tab locked" id="tab-2"><div class="phase-num">3</div>構築</div>
+  <div class="phase-tab locked" id="tab-3"><div class="phase-num">4</div>デザイン</div>
+  <div class="phase-tab locked" id="tab-4"><div class="phase-num">5</div>テスト・確認</div>
+  <div class="phase-tab locked" id="tab-5"><div class="phase-num">6</div>公開</div>
+</div>
+
+<div class="main">
+
+  <!-- フェーズ0：ヒアリング -->
+  <div id="phase-0">
+    <div class="progress-steps">
+      <div class="progress-step"><div class="step-circle current">1</div><div class="step-line"></div></div>
+      <div class="progress-step"><div class="step-circle pending">2</div><div class="step-line"></div></div>
+      <div class="progress-step"><div class="step-circle pending">3</div><div class="step-line"></div></div>
+      <div class="progress-step"><div class="step-circle pending">4</div></div>
+    </div>
+
+    <div class="card">
+      <h3>📄 ヒアリングシートをアップロード</h3>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+        <span class="icon">📋</span>
+        <h4>ヒアリングシートをここにドロップ</h4>
+        <p>PDF・Word・画像に対応。クリックしてファイルを選択することもできます。</p>
+        <input type="file" id="file-input" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onchange="handleFileSelect(event)">
+      </div>
+      <div id="uploaded-file-area"></div>
+    </div>
+
+    <div id="ai-extract-area" style="display:none;">
+      <div class="card">
+        <h3>🤖 AIが読み込んでいます...</h3>
+        <div class="ai-thinking">
+          <div class="ai-thinking-header">⚡ ヒアリングAIが解析中</div>
+          <div class="ai-thinking-steps">
+            <div class="ai-step done" id="step-1"><div class="dot"></div>ファイルを読み込み中</div>
+            <div class="ai-step current" id="step-2"><div class="dot"></div>ブランド・商品情報を抽出中</div>
+            <div class="ai-step pending" id="step-3"><div class="dot"></div>ペルソナ情報を整理中</div>
+            <div class="ai-step pending" id="step-4"><div class="dot"></div>要件・機能情報を抽出中</div>
+            <div class="ai-step pending" id="step-5"><div class="dot"></div>仕様書を生成中</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="extracted-area" style="display:none;">
+      <div class="status-info status-banner">
+        ✅ ヒアリングシートの読み込みが完了しました。内容を確認して、必要があれば修正してください。
+      </div>
+
+      <div class="card">
+        <h3>🏪 商品・サービス情報</h3>
+        <div class="extracted-grid">
+          <div class="extracted-item" style="grid-column:1/-1;">
+            <label>販売する商品・サービス</label>
+            <textarea id="e-product" rows="2"></textarea>
+          </div>
+          <div class="extracted-item" style="grid-column:1/-1;">
+            <label>商品の特徴・強み</label>
+            <textarea id="e-strength" rows="2"></textarea>
+          </div>
+          <div class="extracted-item">
+            <label>企業理念・大事にしている価値観</label>
+            <textarea id="e-value" rows="2"></textarea>
+          </div>
+          <div class="extracted-item">
+            <label>現在のSNS・HP URL</label>
+            <textarea id="e-sns" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>👤 ペルソナ</h3>
+        <div class="extracted-grid">
+          <div class="extracted-item"><label>年齢・性別</label><input type="text" id="e-age"></div>
+          <div class="extracted-item"><label>職業・役職</label><input type="text" id="e-job"></div>
+          <div class="extracted-item"><label>年収</label><input type="text" id="e-income"></div>
+          <div class="extracted-item"><label>家族構成・婚姻</label><input type="text" id="e-family"></div>
+          <div class="extracted-item"><label>居住地</label><input type="text" id="e-location"></div>
+          <div class="extracted-item"><label>性格・趣味</label><input type="text" id="e-character"></div>
+          <div class="extracted-item" style="grid-column:1/-1;"><label>悩み・課題</label><textarea id="e-problem" rows="2"></textarea></div>
+          <div class="extracted-item"><label>よく見るWebサイト</label><input type="text" id="e-websites"></div>
+          <div class="extracted-item"><label>このサイトとの出会い方</label><input type="text" id="e-how"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🛒 ショップ要件</h3>
+        <div style="margin-bottom:16px;">
+          <span class="section-label">追加したいページ</span>
+          <div id="e-pages-display" style="font-size:13px;color:var(--text);line-height:1.8;background:#f8faf8;padding:10px 14px;border-radius:9px;border:1px solid var(--border);"></div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <span class="section-label">参考サイト</span>
+          <textarea id="e-ref" rows="2"></textarea>
+        </div>
+        <div class="extracted-grid">
+          <div class="extracted-item"><label>商品種類・点数</label><textarea id="e-products" rows="2"></textarea></div>
+          <div class="extracted-item"><label>希望機能</label><textarea id="e-features" rows="2"></textarea></div>
+          <div class="extracted-item"><label>決済手段</label><textarea id="e-payment" rows="2"></textarea></div>
+          <div class="extracted-item"><label>配送方法・配送料</label><textarea id="e-shipping" rows="2"></textarea></div>
+          <div class="extracted-item"><label>希望納品時期</label><input type="text" id="e-deadline"></div>
+          <div class="extracted-item"><label>予算（構築・月額運用）</label><input type="text" id="e-budget"></div>
+        </div>
+      </div>
+
+      <div class="approve-bar">
+        <div style="font-size:13px;color:var(--muted);">内容を確認したら承認してください</div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-secondary" onclick="resetPhase0()">やり直し</button>
+          <button class="btn btn-orange btn-lg" onclick="approveHearing()">承認して設計フェーズへ →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ヒアリングシートなしで手入力する場合 -->
+    <div id="manual-input-toggle" style="text-align:center;margin-top:8px;">
+      <button class="btn btn-secondary" onclick="showManualInput()" style="font-size:13px;">シートがない場合は手入力する</button>
+    </div>
+  </div>
+
+  <!-- フェーズ1：設計・テーマ -->
+  <div id="phase-1" style="display:none;">
+    <div class="status-info status-banner">
+      🎨 ヒアリング情報をもとに、AIが最適なShopifyテーマとページ構成を提案します。
+    </div>
+
+    <div class="card">
+      <h3>🎨 テーマ提案</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">ブランドイメージに合ったShopifyテーマを選んでください。</p>
+      <div class="theme-cards" id="theme-cards">
+        <div class="theme-card selected" onclick="selectTheme(this,'Dawn')">
+          <div class="recommended-badge">AIおすすめ</div>
+          <div class="theme-name">Dawn</div>
+          <div class="theme-price">無料</div>
+          <div class="theme-desc">シンプルでクリーンなデザイン。商品の世界観を前面に出したいブランドに最適。</div>
+          <div class="theme-tags"><span class="theme-tag">シンプル</span><span class="theme-tag">高速</span><span class="theme-tag">無料</span></div>
+        </div>
+        <div class="theme-card" onclick="selectTheme(this,'Impulse')">
+          <div class="theme-name">Impulse</div>
+          <div class="theme-price">有料（$350〜）</div>
+          <div class="theme-desc">ビジュアルインパクト重視。大きな画像とアニメーションでブランドを表現。</div>
+          <div class="theme-tags"><span class="theme-tag">ビジュアル重視</span><span class="theme-tag">アニメーション</span></div>
+        </div>
+        <div class="theme-card" onclick="selectTheme(this,'Prestige')">
+          <div class="theme-name">Prestige</div>
+          <div class="theme-price">有料（$380〜）</div>
+          <div class="theme-desc">高級感・ラグジュアリーブランド向け。余白を活かした上品なレイアウト。</div>
+          <div class="theme-tags"><span class="theme-tag">ラグジュアリー</span><span class="theme-tag">上品</span></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <span class="section-label">その他の希望テーマがあれば</span>
+        <input type="text" id="custom-theme" placeholder="例：Debut、Brooklyn など">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📐 ページ構成</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">必要なページにチェックを入れてください。</p>
+      <div class="page-list">
+        <div class="page-item"><input type="checkbox" checked disabled><span class="page-name">トップページ</span><span class="page-required">必須</span></div>
+        <div class="page-item"><input type="checkbox" checked disabled><span class="page-name">商品一覧ページ</span><span class="page-required">必須</span></div>
+        <div class="page-item"><input type="checkbox" checked disabled><span class="page-name">商品詳細ページ</span><span class="page-required">必須</span></div>
+        <div class="page-item"><input type="checkbox" checked disabled><span class="page-name">カート・チェックアウト</span><span class="page-required">必須</span></div>
+        <div class="page-item"><input type="checkbox" id="p-about" checked><span class="page-name">About / ブランドストーリー</span></div>
+        <div class="page-item"><input type="checkbox" id="p-contact" checked><span class="page-name">お問い合わせページ</span></div>
+        <div class="page-item"><input type="checkbox" id="p-faq"><span class="page-name">よくある質問（FAQ）</span></div>
+        <div class="page-item"><input type="checkbox" id="p-blog"><span class="page-name">ブログ・読み物</span></div>
+        <div class="page-item"><input type="checkbox" id="p-collection"><span class="page-name">コレクション別ページ</span></div>
+        <div class="page-item"><input type="checkbox" id="p-lookbook"><span class="page-name">ルックブック・使用イメージ</span></div>
+        <div class="page-item"><input type="checkbox" id="p-privacy" checked><span class="page-name">プライバシーポリシー</span></div>
+        <div class="page-item"><input type="checkbox" id="p-terms" checked><span class="page-name">特定商取引法に基づく表記</span></div>
+      </div>
+      <div style="margin-top:14px;">
+        <span class="section-label">その他のページ</span>
+        <input type="text" id="other-pages" placeholder="例：ラッピングオプション、サイズガイドなど">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>⚙️ 機能・連携</h3>
+      <div style="margin-bottom:16px;">
+        <span class="section-label">導入する機能</span>
+        <div class="select-chips">
+          <div class="chip selected" onclick="this.classList.toggle('selected')">商品レビュー</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">メルマガ配信</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">Instagram連携</div>
+          <div class="chip selected" onclick="this.classList.toggle('selected')">Googleアナリティクス</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">ポイント・会員機能</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">定期購入</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">ギフトラッピング</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">在庫通知メール</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">多言語対応</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">ライブチャット</div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <span class="section-label">決済手段</span>
+        <div class="select-chips">
+          <div class="chip selected" onclick="this.classList.toggle('selected')">クレジットカード</div>
+          <div class="chip selected" onclick="this.classList.toggle('selected')">Apple Pay</div>
+          <div class="chip selected" onclick="this.classList.toggle('selected')">Google Pay</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">Amazon Pay</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">銀行振込</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">コンビニ払い</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">後払い（ペイディ）</div>
+        </div>
+      </div>
+      <div>
+        <span class="section-label">配送設定</span>
+        <div class="select-chips">
+          <div class="chip selected" onclick="this.classList.toggle('selected')">ヤマト運輸</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">佐川急便</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">日本郵便</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">クリックポスト</div>
+          <div class="chip" onclick="this.classList.toggle('selected')">ネコポス</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="approve-bar">
+      <div style="font-size:13px;color:var(--muted);">テーマとページ構成を確認してください</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="backToPhase(0)">← 戻る</button>
+        <button class="btn btn-orange btn-lg" onclick="approveDesign()">承認して構築フェーズへ →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- フェーズ2：構築（仕様書） -->
+  <div id="phase-2" style="display:none;">
+    <div class="status-info status-banner">
+      📋 仕様書が完成しました。構築作業を開始してください。
+    </div>
+
+    <div class="card">
+      <h3>📋 Shopify構築仕様書</h3>
+      <div id="spec-content"></div>
+    </div>
+
+    <div class="card">
+      <h3>✅ 構築チェックリスト</h3>
+      <div class="page-list" id="build-checklist">
+        <div class="page-item"><input type="checkbox"><span class="page-name">Shopifyアカウント作成・プラン設定</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">ドメイン取得・設定</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">テーマインストール・初期設定</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">カラー・フォント設定</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">ヘッダー・フッター設定</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">商品登録（画像・説明文・価格）</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">コレクション設定</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">決済設定</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">配送設定</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">固定ページ作成（About等）</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">アプリインストール・設定</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">Googleアナリティクス連携</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">テスト購入・動作確認</span></div>
+      </div>
+    </div>
+
+    <div class="approve-bar">
+      <div style="font-size:13px;color:var(--muted);">構築が完了したら次へ進んでください</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="backToPhase(1)">← 戻る</button>
+        <button class="btn btn-orange btn-lg" onclick="goToPhase(3)">構築完了 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- フェーズ3以降はシンプルに -->
+  <div id="phase-3" style="display:none;">
+    <div class="status-info status-banner">🎨 デザイン・コンテンツフェーズです。</div>
+    <div class="card"><h3>🖼️ デザイン・コンテンツ作業</h3>
+      <div class="page-list">
+        <div class="page-item"><input type="checkbox"><span class="page-name">バナー・メイン画像の準備</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">商品画像の最適化</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">商品説明文のライティング</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">Aboutページのライティング</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">SP・PC表示の確認</span></div>
+      </div>
+    </div>
+    <div class="approve-bar">
+      <div style="font-size:13px;color:var(--muted);">デザイン・コンテンツが完了したら次へ</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="backToPhase(2)">← 戻る</button>
+        <button class="btn btn-orange btn-lg" onclick="goToPhase(4)">完了 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="phase-4" style="display:none;">
+    <div class="status-info status-banner">✅ テスト・確認フェーズです。</div>
+    <div class="card"><h3>🔍 テスト・確認チェックリスト</h3>
+      <div class="page-list">
+        <div class="page-item"><input type="checkbox"><span class="page-name">テスト購入（決済・在庫・メール確認）</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">全ページのリンク確認</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">フォームの動作確認</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">SP（スマホ）表示確認</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">クライアント確認・修正対応</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">特定商取引法・プライバシーポリシー確認</span></div>
+      </div>
+    </div>
+    <div class="approve-bar">
+      <div style="font-size:13px;color:var(--muted);">テストが完了したら公開へ</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="backToPhase(3)">← 戻る</button>
+        <button class="btn btn-orange btn-lg" onclick="goToPhase(5)">公開フェーズへ →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="phase-5" style="display:none;">
+    <div class="status-info status-banner">🚀 公開フェーズです。お疲れ様でした！</div>
+    <div class="card"><h3>🚀 公開チェックリスト</h3>
+      <div class="page-list">
+        <div class="page-item"><input type="checkbox"><span class="page-name">パスワード解除・ショップ公開</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">Googleアナリティクス・Search Console設定</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">SNSプロフィールのURL更新</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">公開告知（SNS投稿など）</span></div>
+        <div class="page-item"><input type="checkbox"><span class="page-name">初回レポートの設定</span></div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:32px;">
+      <div style="font-size:48px;margin-bottom:16px;">🎉</div>
+      <div style="font-size:20px;font-weight:700;color:var(--green-dark);margin-bottom:8px;">公開完了！</div>
+      <div style="font-size:14px;color:var(--muted);">お疲れ様でした。運用フェーズに入ります。</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://rrmgwyvzinlbexpzevsa.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_rLMPo0F9Jwv7Z2QNyrGT5A_eC2MRuHj';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentClient = null;
+let currentPhase = 0;
+let uploadedFile = null;
+let hearingData = {};
+
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const clientId = params.get('clientId');
+  const clientName = params.get('clientName');
+  if (clientId && clientName) {
+    currentClient = { id: clientId, name: decodeURIComponent(clientName) };
+    document.getElementById('header-client').textContent = currentClient.name;
+    document.getElementById('client-overlay').style.display = 'none';
+  }
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('dragover');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  uploadedFile = file;
+  const size = (file.size / 1024).toFixed(0) + 'KB';
+  document.getElementById('uploaded-file-area').innerHTML = `
+    <div class="uploaded-file">
+      <span class="file-icon">📄</span>
+      <div class="file-info">
+        <div class="file-name">${file.name}</div>
+        <div class="file-size">${size}</div>
+      </div>
+      <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;" onclick="removeFile()">削除</button>
+    </div>
+  `;
+  document.getElementById('manual-input-toggle').style.display = 'none';
+  setTimeout(() => startAiExtract(file), 500);
+}
+
+function removeFile() {
+  uploadedFile = null;
+  document.getElementById('uploaded-file-area').innerHTML = '';
+  document.getElementById('ai-extract-area').style.display = 'none';
+  document.getElementById('extracted-area').style.display = 'none';
+  document.getElementById('manual-input-toggle').style.display = 'block';
+  document.getElementById('file-input').value = '';
+}
+
+async function startAiExtract(file) {
+  document.getElementById('ai-extract-area').style.display = 'block';
+  document.getElementById('extracted-area').style.display = 'none';
+
+  const steps = ['step-1','step-2','step-3','step-4','step-5'];
+  for (let i = 0; i < steps.length; i++) {
+    await new Promise(r => setTimeout(r, 800));
+    document.getElementById(steps[i]).className = 'ai-step done';
+    if (i+1 < steps.length) document.getElementById(steps[i+1]).className = 'ai-step current';
+  }
+
+  // ファイルをbase64に変換してAPIへ
+  try {
+    const base64 = await fileToBase64(file);
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf';
+
+    let messages;
+    if (isImage) {
+      messages = [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
+          { type: 'text', text: getExtractionPrompt() }
+        ]
+      }];
+    } else {
+      messages = [{
+        role: 'user',
+        content: [
+          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+          { type: 'text', text: getExtractionPrompt() }
+        ]
+      }];
+    }
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2000, messages })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '{}';
+    try {
+      const json = JSON.parse(text.replace(/```json|```/g,'').trim());
+      fillExtractedFields(json);
+    } catch(e) {
+      fillExtractedFields({});
+    }
+  } catch(e) {
+    fillExtractedFields({});
+  }
+
+  document.getElementById('ai-extract-area').style.display = 'none';
+  document.getElementById('extracted-area').style.display = 'block';
+}
+
+function getExtractionPrompt() {
+  return `このヒアリングシートから情報を抽出して、以下のJSON形式で返してください。見つからない項目は空文字にしてください。必ずJSONのみ返し、説明文は不要です。
+
+{
+  "product": "販売する商品・サービス",
+  "strength": "商品の特徴・強み",
+  "value": "企業理念・価値観",
+  "sns": "現在のSNS・HP URL",
+  "persona_age": "年齢・性別",
+  "persona_job": "職業・役職",
+  "persona_income": "年収",
+  "persona_family": "家族構成・婚姻",
+  "persona_location": "居住地",
+  "persona_character": "性格・趣味",
+  "persona_problem": "悩み・課題",
+  "persona_websites": "よく見るWebサイト",
+  "persona_how": "このサイトとの出会い方",
+  "pages": "追加したいページ",
+  "ref": "参考サイト",
+  "products": "商品種類・点数",
+  "features": "希望機能",
+  "payment": "決済手段",
+  "shipping": "配送方法・配送料",
+  "deadline": "希望納品時期",
+  "budget": "予算"
+}`;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function fillExtractedFields(data) {
+  const fields = {
+    'e-product': data.product, 'e-strength': data.strength, 'e-value': data.value,
+    'e-sns': data.sns, 'e-age': data.persona_age, 'e-job': data.persona_job,
+    'e-income': data.persona_income, 'e-family': data.persona_family,
+    'e-location': data.persona_location, 'e-character': data.persona_character,
+    'e-problem': data.persona_problem, 'e-websites': data.persona_websites,
+    'e-how': data.persona_how, 'e-ref': data.ref, 'e-products': data.products,
+    'e-features': data.features, 'e-payment': data.payment,
+    'e-shipping': data.shipping, 'e-deadline': data.deadline, 'e-budget': data.budget
+  };
+  Object.entries(fields).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el && val) el.value = val;
+  });
+  document.getElementById('e-pages-display').textContent = data.pages || '未抽出';
+}
+
+function showManualInput() {
+  document.getElementById('manual-input-toggle').style.display = 'none';
+  document.getElementById('extracted-area').style.display = 'block';
+}
+
+function resetPhase0() {
+  removeFile();
+  document.getElementById('extracted-area').style.display = 'none';
+  document.getElementById('manual-input-toggle').style.display = 'block';
+}
+
+function approveHearing() {
+  hearingData = {
+    product: document.getElementById('e-product').value,
+    strength: document.getElementById('e-strength').value,
+    value: document.getElementById('e-value').value,
+    persona_age: document.getElementById('e-age').value,
+    ref: document.getElementById('e-ref').value,
+    features: document.getElementById('e-features').value,
+    budget: document.getElementById('e-budget').value,
+  };
+  goToPhase(1);
+}
+
+function approveDesign() {
+  const theme = document.querySelector('.theme-card.selected')?.querySelector('.theme-name')?.textContent || 'Dawn';
+  const pages = [];
+  document.querySelectorAll('.page-list input[type=checkbox]:checked').forEach(cb => {
+    pages.push(cb.closest('.page-item').querySelector('.page-name').textContent);
+  });
+  const features = [];
+  document.querySelectorAll('.select-chips .chip.selected').forEach(c => features.push(c.textContent));
+
+  const spec = document.getElementById('spec-content');
+  spec.innerHTML = [
+    { label: '顧客名', val: currentClient?.name || '' },
+    { label: '商品・サービス', val: hearingData.product || '未記入' },
+    { label: '選定テーマ', val: theme },
+    { label: 'ページ構成', val: pages.join('、') },
+    { label: '導入機能', val: features.join('、') },
+    { label: '参考サイト', val: hearingData.ref || 'なし' },
+    { label: '予算', val: hearingData.budget || '未記入' },
+  ].map(item => `<div class="spec-row"><div class="spec-label">${item.label}</div><div class="spec-val">${item.val}</div></div>`).join('');
+
+  goToPhase(2);
+}
+
+function goToPhase(n) {
+  for (let i = 0; i < 6; i++) {
+    document.getElementById(`phase-${i}`).style.display = i === n ? 'block' : 'none';
+    const tab = document.getElementById(`tab-${i}`);
+    tab.className = 'phase-tab' + (i < n ? ' done' : i === n ? ' active' : ' locked');
+    if (i <= n) tab.onclick = () => goToPhase(i);
+  }
+  currentPhase = n;
+  window.scrollTo(0, 0);
+}
+
+function backToPhase(n) { goToPhase(n); }
+
+function selectTheme(el, name) {
+  document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+init();
+</script>
+</body>
+</html>
