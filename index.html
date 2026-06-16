@@ -212,50 +212,55 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Goth
 
     <!-- ホーム -->
     <div class="page active" id="page-home">
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="num" id="s-total">0</div>
-          <div class="lbl">顧客数</div>
+
+      <div style="background:var(--green-dark);color:white;border-radius:14px;padding:20px 24px;margin-bottom:20px;">
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px;">おかえりなさい、浜崎さん。</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.6);" id="hero-sub">読み込み中...</div>
+      </div>
+
+      <div class="stat-grid" style="margin-bottom:20px;">
+        <div class="stat-card"><div class="num" id="s-total">0</div><div class="lbl">顧客数</div></div>
+        <div class="stat-card"><div class="num" id="s-active">0</div><div class="lbl">稼働中</div></div>
+        <div class="stat-card"><div class="num" id="s-production">0</div><div class="lbl">制作中</div></div>
+        <div class="stat-card"><div class="num" id="s-tasks">0</div><div class="lbl">未完了タスク</div><div class="sub" id="s-overdue"></div></div>
+      </div>
+
+      <div style="font-size:12px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">制作ツール</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;">
+        <div onclick="window.open('production.html','_blank')" style="background:white;border-radius:14px;padding:20px 22px;border:0.5px solid var(--border);cursor:pointer;" onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''">
+          <div style="width:44px;height:44px;border-radius:12px;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">🔨</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:5px;color:var(--green-dark);">構築ツール</div>
+          <div style="font-size:13px;color:#888;line-height:1.6;margin-bottom:14px;">ヒアリングからShopify土台の構築まで。AIが各フェーズを担当します。</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--green);"><div style="width:7px;height:7px;border-radius:50%;background:var(--green);"></div>利用可能</div>
+            <div style="font-size:13px;color:var(--green);font-weight:600;">開く →</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="num" id="s-active">0</div>
-          <div class="lbl">稼働中</div>
-        </div>
-        <div class="stat-card">
-          <div class="num" id="s-production">0</div>
-          <div class="lbl">制作中</div>
-        </div>
-        <div class="stat-card">
-          <div class="num" id="s-tasks">0</div>
-          <div class="lbl">未完了タスク</div>
-          <div class="sub" id="s-overdue"></div>
+        <div style="background:white;border-radius:14px;padding:20px 22px;border:0.5px solid var(--border);opacity:0.55;">
+          <div style="width:44px;height:44px;border-radius:12px;background:#fff3e0;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">📈</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:5px;color:#444;">運用ツール</div>
+          <div style="font-size:13px;color:#888;line-height:1.6;margin-bottom:14px;">既存顧客の運用・改善をサポート。過去の履歴を引き継いで改善提案を生成します。</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#aaa;"><div style="width:7px;height:7px;border-radius:50%;background:#ccc;"></div>準備中</div>
+            <div style="font-size:13px;color:#bbb;font-weight:600;">近日公開</div>
+          </div>
         </div>
       </div>
+
+      <div style="font-size:12px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">今日の確認事項</div>
       <div class="dash-grid">
-        <div class="card">
-          <h3>📅 今日・直近のMTG</h3>
-          <div id="dash-mtg"><div class="empty"><span class="icon">📅</span>MTG予定がありません</div></div>
-        </div>
-        <div class="card">
-          <h3>⚠️ 期限が近いタスク</h3>
-          <div id="dash-tasks"><div class="empty"><span class="icon">✅</span>タスクがありません</div></div>
-        </div>
-        <div class="card">
-          <h3>🔨 制作中の顧客</h3>
-          <div id="dash-production"></div>
-        </div>
-        <div class="card">
-          <h3>📝 最近の改善メモ</h3>
-          <div id="dash-improvements"></div>
-        </div>
+        <div class="card"><h3>📅 直近のMTG</h3><div id="dash-mtg"><div class="empty"><span class="icon">📅</span>MTG予定がありません</div></div></div>
+        <div class="card"><h3>⚠️ 期限が近いタスク</h3><div id="dash-tasks"><div class="empty"><span class="icon">✅</span>タスクがありません</div></div></div>
+        <div class="card"><h3>🔨 制作中の顧客</h3><div id="dash-production"></div></div>
+        <div class="card"><h3>📝 最近の改善メモ</h3><div id="dash-improvements"></div></div>
       </div>
     </div>
 
     <!-- 制作管理 -->
     <div class="page" id="page-production">
       <div class="toolbar">
-        <div style="font-size:14px;color:#888;">顧客ごとのShopify制作進捗を管理します</div>
-        <button class="btn btn-primary" onclick="openModal('prod')">＋ 制作プロジェクト追加</button>
+        <div style="font-size:14px;color:#888;">制作中の案件を管理します。途中から再開できます。</div>
+        <button class="btn btn-primary" onclick="openModal('prod')">＋ 新規制作を開始</button>
       </div>
       <div id="production-list"></div>
     </div>
@@ -436,23 +441,37 @@ const CHECKLISTS = [
   ['初回レポート作成','改善提案','月次MTG実施','修正対応','次月計画']
 ];
 
-// 制作管理テーブルはローカルで管理（Supabaseに追加するか後で決める）
-const PROD_KEY = 'ecbutler-productions-v1';
-function loadProductions() {
-  try { const d = localStorage.getItem(PROD_KEY); return d ? JSON.parse(d) : []; } catch(e) { return []; }
-}
-function saveProductions() {
-  try { localStorage.setItem(PROD_KEY, JSON.stringify(productions)); } catch(e) {}
+async function loadProductionsFromDB() {
+  const { data } = await sb.from('productions').select('*').order('created_at', { ascending: false });
+  productions = (data || []).map(p => ({
+    ...p,
+    clientId: p.client_id,
+    checklist: p.checklist || {}
+  }));
 }
 
-// チェックリストもローカル管理
-const CL_KEY = 'ecbutler-checklists-v1';
-let checklists = {};
-function loadChecklists() {
-  try { const d = localStorage.getItem(CL_KEY); return d ? JSON.parse(d) : {}; } catch(e) { return {}; }
+async function saveProduction(prod) {
+  const payload = {
+    client_id: prod.clientId,
+    phase: prod.phase,
+    memo: prod.memo || '',
+    checklist: prod.checklist || {},
+    updated_at: new Date().toISOString()
+  };
+  if (prod.id && !prod.id.includes('-new-')) {
+    await sb.from('productions').update(payload).eq('id', prod.id);
+  } else {
+    const { data } = await sb.from('productions').insert(payload).select().single();
+    if (data) prod.id = data.id;
+  }
 }
+
+async function saveProductions() {
+  // 個別保存のため不要（saveProductionを使う）
+}
+
 function saveChecklists() {
-  try { localStorage.setItem(CL_KEY, JSON.stringify(checklists)); } catch(e) {}
+  // チェックリストはproductionオブジェクト内で管理
 }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -471,8 +490,7 @@ async function loadAll() {
   mtgs = m.data || [];
   tasks = t.data || [];
   improvements = i.data || [];
-  productions = loadProductions();
-  checklists = loadChecklists();
+  await loadProductionsFromDB();
   render();
 }
 
@@ -662,41 +680,59 @@ async function deleteTask(id) {
 }
 
 // ===== PRODUCTION =====
-function addProduction() {
+async function addProduction() {
   const clientId = document.getElementById('pf-client').value;
   if (!clientId) { alert('顧客を選択してください'); return; }
   if (productions.find(p => p.clientId === clientId)) { alert('この顧客の制作プロジェクトはすでに存在します'); return; }
-  productions.push({
-    id: uid(), clientId,
-    phase: parseInt(document.getElementById('pf-phase').value),
-    memo: document.getElementById('pf-memo').value.trim(),
-    createdAt: new Date().toISOString()
-  });
+  const memo = document.getElementById('pf-memo').value.trim();
+  const phase = parseInt(document.getElementById('pf-phase').value);
+  const { data } = await sb.from('productions').insert({
+    client_id: clientId, phase, memo, checklist: {}
+  }).select().single();
   document.getElementById('pf-memo').value = '';
-  saveProductions();
-  closeModal('prod'); render();
+  closeModal('prod');
+  await loadProductionsFromDB();
+  render();
 }
 
-function updatePhase(prodId, phase) {
+async function updatePhase(prodId, phase) {
   const p = productions.find(x => x.id === prodId);
-  if (p) { p.phase = phase; saveProductions(); render(); }
+  if (p) {
+    p.phase = phase;
+    p.checklist = {};
+    await sb.from('productions').update({ phase, checklist: {}, updated_at: new Date().toISOString() }).eq('id', prodId);
+    render();
+  }
 }
 
-function toggleChecklist(prodId, phaseIdx, itemIdx) {
-  const key = `${prodId}-${phaseIdx}-${itemIdx}`;
-  checklists[key] = !checklists[key];
-  saveChecklists(); render();
+async function toggleChecklist(prodId, phaseIdx, itemIdx) {
+  const p = productions.find(x => x.id === prodId);
+  if (!p) return;
+  if (!p.checklist) p.checklist = {};
+  const key = `${phaseIdx}-${itemIdx}`;
+  p.checklist[key] = !p.checklist[key];
+  await sb.from('productions').update({ checklist: p.checklist, updated_at: new Date().toISOString() }).eq('id', prodId);
+  render();
 }
 
-function deleteProduction(id) {
+async function deleteProduction(id) {
   if (!confirm('この制作プロジェクトを削除しますか？')) return;
-  productions = productions.filter(p => p.id !== id);
-  saveProductions(); render();
+  await sb.from('productions').delete().eq('id', id);
+  await loadProductionsFromDB();
+  render();
 }
 
 // ===== RENDER =====
 function renderDashboard() {
   const today = new Date().toISOString().slice(0,10);
+  const heroSub = document.getElementById('hero-sub');
+  if (heroSub) {
+    const today2 = new Date().toISOString().slice(0,10);
+    const overdueCount = tasks.filter(t => !t.done && t.due_date && t.due_date < today2).length;
+    const upcomingMtgCount = mtgs.filter(m => m.date >= today2).length;
+    const pendingCount = tasks.filter(t => !t.done).length;
+    heroSub.textContent = `未完了タスクが${pendingCount}件${overdueCount > 0 ? `（うち${overdueCount}件期限超過）` : ''}、今後のMTGが${upcomingMtgCount}件あります。`;
+  }
   document.getElementById('s-total').textContent = clients.length;
   document.getElementById('s-active').textContent = clients.filter(c => c.status === 'active').length;
   document.getElementById('s-production').textContent = productions.filter(p => p.phase < 6).length;
@@ -747,13 +783,15 @@ function renderProduction() {
   el.innerHTML = productions.map(p => {
     const c = clients.find(x => x.id === p.clientId);
     const phaseItems = CHECKLISTS[p.phase] || [];
-    const checkedCount = phaseItems.filter((_,i) => checklists[`${p.id}-${p.phase}-${i}`]).length;
+    const cl = p.checklist || {};
+    const checkedCount = phaseItems.filter((_,i) => cl[`${p.phase}-${i}`]).length;
     const pct = phaseItems.length ? Math.round((checkedCount / phaseItems.length) * 100) : 0;
     return `<div class="prod-card">
       <div class="prod-header">
         <div class="prod-name">${c?.name||'不明'}</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="prod-phase">${PHASES[p.phase]}</span>
+          <button class="btn btn-orange btn-sm" onclick="window.open('production.html?clientId=${p.clientId}&clientName='+encodeURIComponent(c?.name||'')+'&productionId=${p.id}&phase=${p.phase}','_blank')">続きから →</button>
           <button class="btn btn-danger btn-sm" onclick="deleteProduction('${p.id}')">削除</button>
         </div>
       </div>
