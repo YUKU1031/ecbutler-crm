@@ -377,6 +377,52 @@ textarea { resize: vertical; min-height: 72px; }
       </div>
     </div>
 
+    <div class="card">
+      <h3>🎨 デザイン生成（Claude.ai連携）</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">ブランド情報からプロンプトを自動生成します。Claude.aiに貼り付けてHTMLを生成し、下のプレビューで確認できます。</p>
+
+      <!-- STEP 1: プロンプト生成 -->
+      <div style="background:#f8faf8;border-radius:10px;border:1px solid var(--border);padding:16px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--green-dark);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:11px;display:flex;align-items:center;justify-content:center;">1</span>
+          プロンプトを生成してコピー
+        </div>
+        <div id="prompt-output" style="font-size:12px;color:var(--muted);font-style:italic;line-height:1.6;background:white;border:1px solid var(--border);border-radius:8px;padding:12px;min-height:80px;white-space:pre-wrap;">「プロンプトを生成」ボタンを押してください</div>
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="generatePrompt()">✨ プロンプトを生成</button>
+          <button class="btn btn-secondary btn-sm" id="copy-prompt-btn" style="display:none;" onclick="copyPrompt()">📋 コピー</button>
+          <a href="https://claude.ai" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">Claude.aiを開く →</a>
+        </div>
+      </div>
+
+      <!-- STEP 2: コード貼り付け -->
+      <div style="background:#f8faf8;border-radius:10px;border:1px solid var(--border);padding:16px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--green-dark);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:11px;display:flex;align-items:center;justify-content:center;">2</span>
+          Claude.aiで生成したHTMLをここに貼り付け
+        </div>
+        <textarea id="paste-code-input" placeholder="Claude.aiで生成したHTMLコードをここに貼り付けてください..." style="width:100%;height:120px;font-family:monospace;font-size:12px;padding:10px;border:1px solid var(--border);border-radius:8px;resize:vertical;"></textarea>
+        <div style="margin-top:10px;">
+          <button class="btn btn-primary btn-sm" onclick="previewCode()">👁 プレビューを表示</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: プレビュー -->
+      <div id="design-preview-area" style="display:none;">
+        <div style="font-size:12px;font-weight:700;color:var(--green-dark);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span style="width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:11px;display:flex;align-items:center;justify-content:center;">3</span>
+          プレビュー確認
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button class="btn btn-secondary btn-sm" onclick="togglePreviewDevice('desktop')">💻 PC</button>
+          <button class="btn btn-secondary btn-sm" onclick="togglePreviewDevice('mobile')">📱 スマホ</button>
+        </div>
+        <div id="preview-frame-wrap" style="border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#f8f8f8;transition:all 0.3s;">
+          <iframe id="preview-frame" style="width:100%;height:520px;border:none;display:block;" sandbox="allow-same-origin allow-scripts"></iframe>
+        </div>
+      </div>
+    </div>
+
     <div class="approve-bar">
       <div style="font-size:13px;color:var(--muted);">テーマとページ構成を確認してください</div>
       <div style="display:flex;gap:10px;">
@@ -762,6 +808,70 @@ function backToPhase(n) { goToPhase(n); }
 function selectTheme(el, name) {
   document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
+}
+
+// ===== DESIGN GENERATION =====
+let generatedPrompt = '';
+
+function generatePrompt() {
+  const theme = document.querySelector('.theme-card.selected')?.querySelector('.theme-name')?.textContent || 'Dawn';
+  const pages = [];
+  document.querySelectorAll('.page-list input[type=checkbox]:checked').forEach(cb => {
+    pages.push(cb.closest('.page-item').querySelector('.page-name').textContent);
+  });
+  const colors = [];
+  document.querySelectorAll('.select-chips .chip.selected').forEach(c => colors.push(c.textContent));
+
+  const product = document.getElementById('e-product')?.value || hearingData.product || '';
+  const concept = document.getElementById('e-concept')?.value || hearingData.concept || '';
+  const age = document.getElementById('e-age')?.value || '';
+  const ref = document.getElementById('e-ref')?.value || hearingData.ref || '';
+
+  generatedPrompt = `以下のブランド情報をもとに、ShopifyのECサイトのトップページのHTMLを生成してください。
+
+【ブランド情報】
+商品・サービス: ${product}
+ブランドコンセプト: ${concept}
+ターゲット: ${age}
+選定テーマ: ${theme}
+カラーイメージ: ${colors.join('、') || '未選択'}
+参考サイト: ${ref || 'なし'}
+
+【含めるページ要素】
+${pages.map(p => '・' + p).join('
+')}
+
+【生成ルール】
+- 完全なHTMLファイル（DOCTYPE含む）で生成する
+- インラインCSSのみ使用（外部CSSファイルなし）
+- Google Fonts（Noto Sans JP等）は使用可
+- ヘッダー・ヒーローセクション・特徴紹介・商品一覧（ダミー3点）・フッターを含める
+- モバイルファーストのレスポンシブデザイン
+- ブランドの世界観・カラーイメージを反映する
+- 日本語テキストを使用
+- HTMLコードのみ返す（説明文不要）`;
+
+  document.getElementById('prompt-output').textContent = generatedPrompt;
+  document.getElementById('prompt-output').style.color = '#1a1a1a';
+  document.getElementById('prompt-output').style.fontStyle = 'normal';
+  document.getElementById('copy-prompt-btn').style.display = 'inline-flex';
+}
+
+async function copyPrompt() {
+  await navigator.clipboard.writeText(generatedPrompt);
+  const btn = document.getElementById('copy-prompt-btn');
+  const orig = btn.textContent;
+  btn.textContent = '✅ コピーしました！';
+  setTimeout(() => btn.textContent = orig, 2000);
+}
+
+function previewCode() {
+  const code = document.getElementById('paste-code-input').value.trim();
+  if (!code) { alert('HTMLコードを貼り付けてください'); return; }
+  const frame = document.getElementById('preview-frame');
+  frame.srcdoc = code;
+  document.getElementById('design-preview-area').style.display = 'block';
+  document.getElementById('design-preview-area').scrollIntoView({ behavior: 'smooth' });
 }
 
 init();
