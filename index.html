@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECバトラー CRM</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
+  .topbar { background: #5C8A52; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar h1 { font-size: 18px; font-weight: 600; }
+  .topbar span { font-size: 13px; opacity: 0.8; }
+  .tabs { background: white; border-bottom: 1px solid #e5e5e5; display: flex; padding: 0 24px; }
+  .tab { padding: 14px 20px; font-size: 14px; color: #666; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; border-top: none; border-left: none; border-right: none; }
+  .tab.active { color: #5C8A52; border-bottom-color: #5C8A52; font-weight: 600; }
+  .content { padding: 24px; max-width: 1100px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .stat-card .num { font-size: 36px; font-weight: 700; color: #5C8A52; }
+  .stat-card .lbl { font-size: 13px; color: #888; margin-top: 4px; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #333; }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-weight: 500; }
+  .btn-primary { background: #5C8A52; color: white; }
+  .btn-primary:hover { background: #4a7040; }
+  .btn-secondary { background: #f0f0f0; color: #333; }
+  .btn-secondary:hover { background: #e0e0e0; }
+  .btn-danger { background: #fff0f0; color: #c00; border: 1px solid #fcc; }
+  .btn-danger:hover { background: #ffe0e0; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .search-input { padding: 8px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; width: 240px; outline: none; }
+  .search-input:focus { border-color: #5C8A52; }
+  .client-card { background: white; border-radius: 12px; padding: 18px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .client-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .client-name { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+  .badge-active { background: #e8f5e2; color: #3a7a2a; }
+  .badge-trial { background: #fff3e0; color: #e65100; }
+  .badge-pause { background: #f0f0f0; color: #666; }
+  .info-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 10px; }
+  .info-item label { font-size: 11px; color: #999; display: block; margin-bottom: 2px; }
+  .info-item a { font-size: 13px; color: #5C8A52; text-decoration: none; }
+  .info-item span { font-size: 13px; color: #333; }
+  .memo-text { font-size: 13px; color: #666; background: #f8f8f8; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; line-height: 1.6; }
+  .action-row { display: flex; gap: 8px; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 28px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 20px; color: #222; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; color: #777; font-weight: 500; }
+  .form-group input, .form-group select, .form-group textarea { padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; width: 100%; font-family: inherit; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #5C8A52; }
+  .form-group textarea { min-height: 80px; resize: vertical; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .mtg-item { display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
+  .mtg-item:last-child { border-bottom: none; }
+  .mtg-date { text-align: center; min-width: 48px; }
+  .mtg-date .day { font-size: 26px; font-weight: 700; color: #5C8A52; line-height: 1; }
+  .mtg-date .mon { font-size: 12px; color: #999; }
+  .mtg-body { flex: 1; }
+  .mtg-body .client-nm { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .mtg-body .topic { font-size: 13px; color: #666; }
+  .mtg-body .minutes { font-size: 12px; color: #888; margin-top: 4px; background: #f8f8f8; padding: 6px 10px; border-radius: 6px; }
+  .task-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+  .task-item:last-child { border-bottom: none; }
+  .task-check { width: 18px; height: 18px; cursor: pointer; accent-color: #5C8A52; }
+  .task-title { flex: 1; font-size: 14px; }
+  .task-title.done { text-decoration: line-through; color: #999; }
+  .task-due { font-size: 12px; color: #E8821A; font-weight: 500; }
+  .task-due.overdue { color: #c00; }
+  .imp-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+  .imp-item:last-child { border-bottom: none; }
+  .imp-date { font-size: 11px; color: #999; margin-bottom: 3px; }
+  .imp-text { font-size: 13px; color: #333; line-height: 1.6; }
+  .empty { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
+  .section-title { font-size: 13px; font-weight: 600; color: #5C8A52; margin-bottom: 12px; margin-top: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .tabs-inner { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #eee; }
+  .tab-inner { padding: 8px 14px; font-size: 13px; color: #888; cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab-inner.active { color: #5C8A52; border-bottom-color: #5C8A52; font-weight: 600; }
+  .detail-section { display: none; }
+  .detail-section.active { display: block; }
+  @media (max-width: 600px) {
+    .info-row { grid-template-columns: 1fr 1fr; }
+    .stat-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: 1; }
+    .content { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>⚔️ ECバトラー CRM</h1>
+  <span id="top-count">読み込み中...</span>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('dashboard')">ダッシュボード</button>
+  <button class="tab" onclick="switchTab('clients')">顧客管理</button>
+  <button class="tab" onclick="switchTab('schedule')">MTGスケジュール</button>
+  <button class="tab" onclick="switchTab('tasks')">タスク</button>
+</div>
+
+<div class="content">
+
+  <!-- ダッシュボード -->
+  <div class="section active" id="tab-dashboard">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="num" id="s-total">0</div><div class="lbl">顧客数</div></div>
+      <div class="stat-card"><div class="num" id="s-active">0</div><div class="lbl">稼働中</div></div>
+      <div class="stat-card"><div class="num" id="s-tasks">0</div><div class="lbl">未完了タスク</div></div>
+    </div>
+    <div class="card">
+      <h3>📅 直近のMTG予定</h3>
+      <div id="dash-mtg"><div class="empty">MTG予定がありません</div></div>
+    </div>
+    <div class="card">
+      <h3>✅ 期限が近いタスク</h3>
+      <div id="dash-tasks"><div class="empty">タスクがありません</div></div>
+    </div>
+  </div>
+
+  <!-- 顧客管理 -->
+  <div class="section" id="tab-clients">
+    <div class="toolbar">
+      <input type="text" class="search-input" id="search-input" placeholder="顧客名で検索…" oninput="renderClients()">
+      <button class="btn btn-primary" onclick="openModal('add')">＋ 顧客追加</button>
+    </div>
+    <div id="client-list"></div>
+  </div>
+
+  <!-- MTGスケジュール -->
+  <div class="section" id="tab-schedule">
+    <div class="toolbar">
+      <div style="font-size:15px;font-weight:600;">MTGスケジュール</div>
+      <button class="btn btn-primary" onclick="openModal('mtg')">＋ MTG追加</button>
+    </div>
+    <div id="schedule-list"></div>
+  </div>
+
+  <!-- タスク -->
+  <div class="section" id="tab-tasks">
+    <div class="toolbar">
+      <div style="font-size:15px;font-weight:600;">タスク一覧</div>
+      <button class="btn btn-primary" onclick="openModal('task')">＋ タスク追加</button>
+    </div>
+    <div id="task-list"></div>
+  </div>
+
+</div>
+
+<!-- 顧客追加モーダル -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <h3>顧客を追加</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>顧客名 *</label><input type="text" id="f-name" placeholder="例：山田花子"></div>
+      <div class="form-group"><label>ステータス</label>
+        <select id="f-status">
+          <option value="active">稼働中</option>
+          <option value="trial">トライアル</option>
+          <option value="pause">一時停止</option>
+        </select>
+      </div>
+      <div class="form-group full"><label>ショップURL</label><input type="text" id="f-url" placeholder="https://example.myshopify.com"></div>
+      <div class="form-group full"><label>Instagram / SNS</label><input type="text" id="f-sns" placeholder="https://instagram.com/..."></div>
+      <div class="form-group"><label>契約開始日</label><input type="date" id="f-start"></div>
+      <div class="form-group"><label>次回MTG日</label><input type="date" id="f-nextmtg"></div>
+      <div class="form-group full"><label>メモ / 商品ジャンル</label><textarea id="f-memo" placeholder="取り扱い商品、ブランドの特徴など"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('add')">キャンセル</button>
+      <button class="btn btn-primary" onclick="addClient()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 顧客編集モーダル -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal">
+    <h3>顧客情報を編集</h3>
+    <input type="hidden" id="ef-id">
+    <div class="form-grid">
+      <div class="form-group"><label>顧客名 *</label><input type="text" id="ef-name"></div>
+      <div class="form-group"><label>ステータス</label>
+        <select id="ef-status">
+          <option value="active">稼働中</option>
+          <option value="trial">トライアル</option>
+          <option value="pause">一時停止</option>
+        </select>
+      </div>
+      <div class="form-group full"><label>ショップURL</label><input type="text" id="ef-url"></div>
+      <div class="form-group full"><label>Instagram / SNS</label><input type="text" id="ef-sns"></div>
+      <div class="form-group"><label>契約開始日</label><input type="date" id="ef-start"></div>
+      <div class="form-group"><label>次回MTG日</label><input type="date" id="ef-nextmtg"></div>
+      <div class="form-group full"><label>メモ / 商品ジャンル</label><textarea id="ef-memo"></textarea></div>
+      <div class="form-group full"><label>改善メモを追加</label><textarea id="ef-imp" placeholder="MTGで話した内容、改善提案など…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('edit')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveEdit()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- MTG追加モーダル -->
+<div class="modal-overlay" id="modal-mtg">
+  <div class="modal">
+    <h3>MTGを追加</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>顧客 *</label><select id="mf-client" style="width:100%;"></select></div>
+      <div class="form-group"><label>日付 *</label><input type="date" id="mf-date"></div>
+      <div class="form-group full"><label>議題</label><textarea id="mf-topic" placeholder="話し合う内容、確認事項など"></textarea></div>
+      <div class="form-group full"><label>議事録・決定事項</label><textarea id="mf-minutes" placeholder="MTG後に記録してください"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('mtg')">キャンセル</button>
+      <button class="btn btn-primary" onclick="addMtg()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- タスク追加モーダル -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal">
+    <h3>タスクを追加</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>顧客 *</label><select id="tf-client" style="width:100%;"></select></div>
+      <div class="form-group"><label>期限</label><input type="date" id="tf-due"></div>
+      <div class="form-group full"><label>タスク内容 *</label><input type="text" id="tf-title" placeholder="例：トップページのバナー修正"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('task')">キャンセル</button>
+      <button class="btn btn-primary" onclick="addTask()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 顧客詳細モーダル -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal" style="max-width:640px;">
+    <div id="detail-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('detail')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://rrmgwyvzinlbexpzevsa.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_rLMPo0F9Jwv7Z2QNyrGT5A_eC2MRuHj';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let clients = [], mtgs = [], tasks = [], improvements = [];
+const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+async function loadAll() {
+  const [c, m, t, i] = await Promise.all([
+    sb.from('clients').select('*').order('created_at', { ascending: false }),
+    sb.from('mtgs').select('*').order('date', { ascending: true }),
+    sb.from('tasks').select('*').order('due_date', { ascending: true }),
+    sb.from('improvements').select('*').order('date', { ascending: false })
+  ]);
+  clients = c.data || [];
+  mtgs = m.data || [];
+  tasks = t.data || [];
+  improvements = i.data || [];
+  document.getElementById('top-count').textContent = clients.length + '件の顧客';
+  render();
+}
+
+function statusBadge(s) {
+  const map = { active: ['badge-active','稼働中'], trial: ['badge-trial','トライアル'], pause: ['badge-pause','一時停止'] };
+  const [cls, lbl] = map[s] || map.pause;
+  return `<span class="badge ${cls}">${lbl}</span>`;
+}
+
+function fmtDate(d) {
+  if (!d) return '未設定';
+  const dt = new Date(d + 'T00:00:00');
+  return `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+function switchTab(id) {
+  const ids = ['dashboard','clients','schedule','tasks'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ids[i] === id));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+function openModal(type) {
+  if (type === 'mtg' || type === 'task') {
+    const selId = type === 'mtg' ? 'mf-client' : 'tf-client';
+    document.getElementById(selId).innerHTML = clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('') || '<option>顧客がいません</option>';
+  }
+  document.getElementById('modal-' + type).classList.add('open');
+}
+function closeModal(type) { document.getElementById('modal-' + type).classList.remove('open'); }
+
+async function addClient() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('顧客名を入力してください'); return; }
+  await sb.from('clients').insert({
+    name, status: document.getElementById('f-status').value,
+    url: document.getElementById('f-url').value.trim(),
+    sns: document.getElementById('f-sns').value.trim(),
+    start_date: document.getElementById('f-start').value || null,
+    next_mtg: document.getElementById('f-nextmtg').value || null,
+    memo: document.getElementById('f-memo').value.trim()
+  });
+  closeModal('add'); await loadAll();
+}
+
+function openEdit(id) {
+  const c = clients.find(x => x.id === id); if (!c) return;
+  document.getElementById('ef-id').value = c.id;
+  document.getElementById('ef-name').value = c.name;
+  document.getElementById('ef-status').value = c.status;
+  document.getElementById('ef-url').value = c.url || '';
+  document.getElementById('ef-sns').value = c.sns || '';
+  document.getElementById('ef-start').value = c.start_date || '';
+  document.getElementById('ef-nextmtg').value = c.next_mtg || '';
+  document.getElementById('ef-memo').value = c.memo || '';
+  document.getElementById('ef-imp').value = '';
+  document.getElementById('modal-edit').classList.add('open');
+}
+
+async function saveEdit() {
+  const id = document.getElementById('ef-id').value;
+  await sb.from('clients').update({
+    name: document.getElementById('ef-name').value.trim(),
+    status: document.getElementById('ef-status').value,
+    url: document.getElementById('ef-url').value.trim(),
+    sns: document.getElementById('ef-sns').value.trim(),
+    start_date: document.getElementById('ef-start').value || null,
+    next_mtg: document.getElementById('ef-nextmtg').value || null,
+    memo: document.getElementById('ef-memo').value.trim()
+  }).eq('id', id);
+  const imp = document.getElementById('ef-imp').value.trim();
+  if (imp) await sb.from('improvements').insert({ client_id: id, text: imp, date: new Date().toISOString().slice(0,10) });
+  closeModal('edit'); await loadAll();
+}
+
+async function deleteClient(id) {
+  if (!confirm('この顧客を削除しますか？')) return;
+  await sb.from('clients').delete().eq('id', id);
+  await loadAll();
+}
+
+async function addMtg() {
+  const date = document.getElementById('mf-date').value;
+  if (!date) { alert('日付を入力してください'); return; }
+  await sb.from('mtgs').insert({
+    client_id: document.getElementById('mf-client').value,
+    date, topic: document.getElementById('mf-topic').value.trim(),
+    minutes: document.getElementById('mf-minutes').value.trim()
+  });
+  closeModal('mtg'); await loadAll();
+}
+
+async function deleteMtg(id) {
+  if (!confirm('このMTGを削除しますか？')) return;
+  await sb.from('mtgs').delete().eq('id', id);
+  await loadAll();
+}
+
+async function addTask() {
+  const title = document.getElementById('tf-title').value.trim();
+  if (!title) { alert('タスク内容を入力してください'); return; }
+  await sb.from('tasks').insert({
+    client_id: document.getElementById('tf-client').value,
+    title, due_date: document.getElementById('tf-due').value || null
+  });
+  closeModal('task'); await loadAll();
+}
+
+async function toggleTask(id, done) {
+  await sb.from('tasks').update({ done: !done }).eq('id', id);
+  await loadAll();
+}
+
+async function deleteTask(id) {
+  if (!confirm('このタスクを削除しますか？')) return;
+  await sb.from('tasks').delete().eq('id', id);
+  await loadAll();
+}
+
+function openDetail(id) {
+  const c = clients.find(x => x.id === id); if (!c) return;
+  const cMtgs = mtgs.filter(m => m.client_id === id);
+  const cTasks = tasks.filter(t => t.client_id === id);
+  const cImps = improvements.filter(i => i.client_id === id);
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="width:48px;height:48px;border-radius:50%;background:#e8f5e2;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#5C8A52;">${c.name.slice(0,1)}</div>
+      <div><div style="font-size:18px;font-weight:700;">${c.name}</div>${statusBadge(c.status)}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div><div style="font-size:11px;color:#999;margin-bottom:2px;">ショップURL</div>${c.url ? `<a href="${c.url}" target="_blank" style="font-size:13px;color:#5C8A52;">${c.url}</a>` : '<span style="font-size:13px;color:#aaa;">未設定</span>'}</div>
+      <div><div style="font-size:11px;color:#999;margin-bottom:2px;">SNS</div>${c.sns ? `<a href="${c.sns}" target="_blank" style="font-size:13px;color:#5C8A52;">${c.sns}</a>` : '<span style="font-size:13px;color:#aaa;">未設定</span>'}</div>
+      <div><div style="font-size:11px;color:#999;margin-bottom:2px;">契約開始</div><span style="font-size:13px;">${fmtDate(c.start_date)}</span></div>
+      <div><div style="font-size:11px;color:#999;margin-bottom:2px;">次回MTG</div><span style="font-size:13px;">${fmtDate(c.next_mtg)}</span></div>
+    </div>
+    ${c.memo ? `<div style="font-size:13px;color:#555;background:#f8f8f8;padding:10px 14px;border-radius:8px;margin-bottom:16px;line-height:1.6;">${c.memo}</div>` : ''}
+    <div class="tabs-inner">
+      <button class="tab-inner active" onclick="switchDetail('mtg')">MTG履歴 (${cMtgs.length})</button>
+      <button class="tab-inner" onclick="switchDetail('task')">タスク (${cTasks.length})</button>
+      <button class="tab-inner" onclick="switchDetail('imp')">改善履歴 (${cImps.length})</button>
+    </div>
+    <div class="detail-section active" id="detail-mtg">
+      ${cMtgs.length ? cMtgs.map(m => `<div class="mtg-item"><div class="mtg-date"><div class="day">${new Date(m.date+'T00:00:00').getDate()}</div><div class="mon">${MONTHS[new Date(m.date+'T00:00:00').getMonth()]}</div></div><div class="mtg-body"><div class="topic">${m.topic||'議題未設定'}</div>${m.minutes?`<div class="minutes">${m.minutes}</div>`:''}</div></div>`).join('') : '<div class="empty">MTG履歴がありません</div>'}
+    </div>
+    <div class="detail-section" id="detail-task">
+      ${cTasks.length ? cTasks.map(t => `<div class="task-item"><input type="checkbox" class="task-check" ${t.done?'checked':''} onchange="toggleTask('${t.id}',${t.done})"><span class="task-title ${t.done?'done':''}">${t.title}</span>${t.due_date?`<span class="task-due">${fmtDate(t.due_date)}</span>`:''}</div>`).join('') : '<div class="empty">タスクがありません</div>'}
+    </div>
+    <div class="detail-section" id="detail-imp">
+      ${cImps.length ? cImps.map(i => `<div class="imp-item"><div class="imp-date">${i.date}</div><div class="imp-text">${i.text}</div></div>`).join('') : '<div class="empty">改善履歴がありません</div>'}
+    </div>
+  `;
+  document.getElementById('modal-detail').classList.add('open');
+}
+
+function switchDetail(id) {
+  const ids = ['mtg','task','imp'];
+  document.querySelectorAll('.tab-inner').forEach((t,i) => t.classList.toggle('active', ids[i] === id));
+  document.querySelectorAll('.detail-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('detail-' + id).classList.add('active');
+}
+
+function renderDashboard() {
+  document.getElementById('s-total').textContent = clients.length;
+  document.getElementById('s-active').textContent = clients.filter(c => c.status === 'active').length;
+  const pending = tasks.filter(t => !t.done).length;
+  document.getElementById('s-tasks').textContent = pending;
+
+  const upcoming = [...mtgs].slice(0,4);
+  const dm = document.getElementById('dash-mtg');
+  dm.innerHTML = upcoming.length ? upcoming.map(m => {
+    const c = clients.find(x => x.id === m.client_id);
+    const dt = new Date(m.date + 'T00:00:00');
+    return `<div class="mtg-item"><div class="mtg-date"><div class="day">${dt.getDate()}</div><div class="mon">${MONTHS[dt.getMonth()]}</div></div><div class="mtg-body"><div class="client-nm">${c?.name||'不明'}</div><div class="topic">${m.topic||'議題未設定'}</div></div></div>`;
+  }).join('') : '<div class="empty">MTG予定がありません</div>';
+
+  const pendingTasks = tasks.filter(t => !t.done).slice(0,5);
+  const dt2 = document.getElementById('dash-tasks');
+  dt2.innerHTML = pendingTasks.length ? pendingTasks.map(t => {
+    const c = clients.find(x => x.id === t.client_id);
+    const today = new Date().toISOString().slice(0,10);
+    const overdue = t.due_date && t.due_date < today;
+    return `<div class="task-item"><input type="checkbox" class="task-check" onchange="toggleTask('${t.id}',${t.done})"><span class="task-title">[${c?.name||'?'}] ${t.title}</span>${t.due_date?`<span class="task-due ${overdue?'overdue':''}">${fmtDate(t.due_date)}</span>`:''}</div>`;
+  }).join('') : '<div class="empty">未完了タスクがありません</div>';
+}
+
+function renderClients() {
+  const q = (document.getElementById('search-input')?.value||'').toLowerCase();
+  const filtered = clients.filter(c => c.name.toLowerCase().includes(q));
+  const el = document.getElementById('client-list');
+  if (!filtered.length) { el.innerHTML = '<div class="empty">顧客がいません</div>'; return; }
+  el.innerHTML = filtered.map(c => {
+    const cTasks = tasks.filter(t => t.client_id === c.id && !t.done).length;
+    return `<div class="client-card">
+      <div class="client-header">
+        <div class="client-name">${c.name} ${statusBadge(c.status)} ${cTasks>0?`<span style="font-size:11px;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:20px;">${cTasks}件のタスク</span>`:''}
+        </div>
+        <div class="action-row">
+          <button class="btn btn-secondary btn-sm" onclick="openDetail('${c.id}')">詳細</button>
+          <button class="btn btn-secondary btn-sm" onclick="openEdit('${c.id}')">編集</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteClient('${c.id}')">削除</button>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-item"><label>ショップURL</label>${c.url?`<a href="${c.url}" target="_blank">${c.url.replace('https://','').slice(0,25)}</a>`:'<span style="color:#aaa;">未設定</span>'}</div>
+        <div class="info-item"><label>次回MTG</label><span>${fmtDate(c.next_mtg)}</span></div>
+        <div class="info-item"><label>契約開始</label><span>${fmtDate(c.start_date)}</span></div>
+        <div class="info-item"><label>改善記録</label><span>${improvements.filter(i=>i.client_id===c.id).length}件</span></div>
+      </div>
+      ${c.memo?`<div class="memo-text">${c.memo.length>100?c.memo.slice(0,100)+'…':c.memo}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderSchedule() {
+  const el = document.getElementById('schedule-list');
+  if (!mtgs.length) { el.innerHTML = '<div class="empty">MTG予定がありません</div>'; return; }
+  el.innerHTML = `<div class="card">${mtgs.map(m => {
+    const c = clients.find(x => x.id === m.client_id);
+    const dt = new Date(m.date + 'T00:00:00');
+    return `<div class="mtg-item">
+      <div class="mtg-date"><div class="day">${dt.getDate()}</div><div class="mon">${MONTHS[dt.getMonth()]}</div></div>
+      <div class="mtg-body">
+        <div class="client-nm">${c?.name||'不明'}</div>
+        <div class="topic">${m.topic||'議題未設定'}</div>
+        ${m.minutes?`<div class="minutes">${m.minutes}</div>`:''}
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteMtg('${m.id}')">削除</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderTasks() {
+  const el = document.getElementById('task-list');
+  const pending = tasks.filter(t => !t.done);
+  const done = tasks.filter(t => t.done);
+  const today = new Date().toISOString().slice(0,10);
+  const renderTaskItem = t => {
+    const c = clients.find(x => x.id === t.client_id);
+    const overdue = t.due_date && t.due_date < today && !t.done;
+    return `<div class="task-item">
+      <input type="checkbox" class="task-check" ${t.done?'checked':''} onchange="toggleTask('${t.id}',${t.done})">
+      <span class="task-title ${t.done?'done':''}">[${c?.name||'?'}] ${t.title}</span>
+      ${t.due_date?`<span class="task-due ${overdue?'overdue':''}">${fmtDate(t.due_date)}</span>`:''}
+      <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">削除</button>
+    </div>`;
+  };
+  el.innerHTML = `
+    <div class="card"><h3>未完了 (${pending.length})</h3>${pending.length?pending.map(renderTaskItem).join(''):'<div class="empty">未完了タスクがありません</div>'}</div>
+    ${done.length?`<div class="card"><h3>完了済み (${done.length})</h3>${done.map(renderTaskItem).join('')}</div>`:''}
+  `;
+}
+
+function render() { renderDashboard(); renderClients(); renderSchedule(); renderTasks(); }
+
+loadAll();
+</script>
+</body>
+</html>
